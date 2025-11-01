@@ -32,7 +32,30 @@ var FileTestCases = map[string][]libparser.Statement{
 			Args:    []string{"Hello World!", "and another line", "and another."},
 		},
 	},
-	"02_directive_body.tome": {},
+	"02_directive_body.tome": {
+		{
+			Kind:    libparser.SK_EXEC,
+			Literal: "echo",
+			Args:    []string{"1"},
+		},
+		{
+			Kind:    libparser.SK_DIRECTIVE,
+			Literal: "section",
+			Args:    []string{"Hello World!"},
+			Children: []libparser.Statement{
+				{
+					Kind:    libparser.SK_EXEC,
+					Literal: "echo",
+					Args:    []string{"1.1"},
+				},
+				{
+					Kind:    libparser.SK_EXEC,
+					Literal: "echo",
+					Args:    []string{"1.2"},
+				},
+			},
+		},
+	},
 }
 
 func TestAll(test *testing.T) {
@@ -89,7 +112,18 @@ func testFile(test *testing.T, file *os.File, name string, buffer []byte) {
 			assert.DeepEqual(test, test_case[i].Kind, statement.Kind)
 			assert.DeepEqual(test, test_case[i].Literal, statement.Literal)
 			assert.DeepEqual(test, test_case[i].Args, statement.Args)
-			assert.DeepEqual(test, test_case[i].Children, statement.Children)
+			if len(test_case[i].Children) != len(statement.Children) {
+				test.Fatalf(
+					"expected to have %d children but got %d",
+					len(test_case[i].Children),
+					len(statement.Children),
+				)
+			}
+			for j, child := range test_case[i].Children {
+				assert.DeepEqual(test, child.Kind, statement.Children[j].Kind)
+				assert.DeepEqual(test, child.Literal, statement.Children[j].Literal)
+				assert.DeepEqual(test, child.Args, statement.Children[j].Args)
+			}
 			i++
 		}
 	})

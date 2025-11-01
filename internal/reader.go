@@ -32,6 +32,14 @@ func (reader *AdvancedReader) RememberOffset() *AdvancedReader {
 	return reader
 }
 
+func (reader *AdvancedReader) Peek() (byte, error) {
+	data, err := reader.Inner.Peek(1)
+	if err != nil {
+		return 0, err
+	}
+	return data[0], nil
+}
+
 // Reads the next UTF-8 rune
 func (reader *AdvancedReader) Read() (rune, error) {
 	char, size, err := reader.Inner.ReadRune()
@@ -91,6 +99,19 @@ func (reader *AdvancedReader) ReadPosArgs() ([]string, error) {
 	is_escaped := false
 
 	for {
+		// region: Temporary fix
+		peek_char, err := reader.Peek()
+		if err != nil {
+			return out, err
+		}
+		if peek_char == '{' {
+			if builder.Len() != 0 {
+				out = append(out, builder.String())
+			}
+			return out, nil
+		}
+		// endregion
+
 		char, err := reader.Read()
 		if err != nil {
 			return out, err

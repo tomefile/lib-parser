@@ -12,12 +12,14 @@ import (
 type Parser struct {
 	Reader   *internal.AdvancedReader
 	Consumer chan Statement
+	parent   *Statement
 }
 
 func New(reader *bufio.Reader, consumer chan Statement) *Parser {
 	return &Parser{
 		Reader:   internal.NewReader(reader),
 		Consumer: consumer,
+		parent:   nil,
 	}
 }
 
@@ -45,6 +47,13 @@ func (parser *Parser) parseStatement() Statement {
 
 	switch char {
 
+	case '}':
+		if parser.parent == nil {
+			return parser.failSyntax("unexpected '}' closing a non-existant section")
+		}
+		parser.parent.OffsetEnd = parser.Reader.CurrentOffset
+		return *parser.parent
+
 	case '\n', ' ', '\t', '\v':
 		return NullStatement
 
@@ -69,7 +78,19 @@ func (parser *Parser) parseStatement() Statement {
 			return parser.failReading(err)
 		}
 
-		return parser.makeDirective(name, args, []Statement{})
+		char, err := parser.Reader.Read()
+		if err != nil && err != io.EOF {
+			return parser.failReading(err)
+		}
+
+		statement := parser.makeDirective(name, args, []Statement{})
+
+		if char == '{' {
+			parser.parent = &statement
+			return NullStatement
+		} else {
+			return statement
+		}
 
 	default:
 		name, err := parser.Reader.ReadWord(internal.NameCharset)
@@ -115,18 +136,27 @@ func (parser *Parser) failSyntax(format string, a ...any) Statement {
 	}
 }
 
+func (parser *Parser) make(statement Statement) Statement {
+	if parser.parent != nil {
+		parser.parent.Children = append(parser.parent.Children, statement)
+		return NullStatement
+	}
+
+	return statement
+}
+
 func (parser *Parser) makeComment(comment string) Statement {
-	return Statement{
+	return parser.make(Statement{
 		Kind:    SK_COMMENT,
 		Literal: comment,
 
 		OffsetStart: parser.Reader.StoredOffset,
 		OffsetEnd:   parser.Reader.CurrentOffset,
-	}
+	})
 }
 
 func (parser *Parser) makeDirective(name string, args []string, children []Statement) Statement {
-	return Statement{
+	return parser.make(Statement{
 		Kind:     SK_DIRECTIVE,
 		Literal:  name,
 		Args:     args,
@@ -134,27 +164,27 @@ func (parser *Parser) makeDirective(name string, args []string, children []State
 
 		OffsetStart: parser.Reader.StoredOffset,
 		OffsetEnd:   parser.Reader.CurrentOffset,
-	}
+	})
 }
 
 func (parser *Parser) makeMacro(name string, args []string) Statement {
-	return Statement{
+	return parser.make(Statement{
 		Kind:    SK_MACRO,
 		Literal: name,
 		Args:    args,
 
 		OffsetStart: parser.Reader.StoredOffset,
 		OffsetEnd:   parser.Reader.CurrentOffset,
-	}
+	})
 }
 
 func (parser *Parser) makeExec(name string, args []string) Statement {
-	return Statement{
+	return parser.make(Statement{
 		Kind:    SK_EXEC,
 		Literal: name,
 		Args:    args,
 
 		OffsetStart: parser.Reader.StoredOffset,
 		OffsetEnd:   parser.Reader.CurrentOffset,
-	}
+	})
 }
