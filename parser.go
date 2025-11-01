@@ -89,7 +89,6 @@ func (parser *Parser) parseStatement() Statement {
 		}
 
 		return parser.makeExec(name, args)
-
 	}
 }
 
