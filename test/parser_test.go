@@ -66,7 +66,7 @@ func testFile(test *testing.T, file *os.File, name string, buffer []byte) {
 
 		test_case, exists := FileTestCases[name]
 		if !exists {
-			test.Errorf("missing test case for %q", name)
+			test.Fatalf("missing test case for %q", name)
 		}
 
 		consumer := make(chan libparser.Statement)
@@ -77,7 +77,7 @@ func testFile(test *testing.T, file *os.File, name string, buffer []byte) {
 		var i int
 		for statement := range consumer {
 			if len(test_case) <= i {
-				test.Errorf("unknown statement: %#v", statement)
+				test.Fatalf("unknown statement: %#v", statement)
 			}
 
 			data, err := json.MarshalIndent(statement, "", strings.Repeat(" ", 4))
