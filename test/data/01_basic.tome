@@ -1,0 +1,6 @@
+# Example program, привет мир 🟡!
+:include <std>
+
+echo "Hello World!" \
+	"and another line" \
+	"and another."

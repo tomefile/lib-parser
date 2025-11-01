@@ -2,49 +2,98 @@ package parser_test
 
 import (
 	"bufio"
-	"bytes"
-	"fmt"
+	"encoding/json"
+	"os"
+	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 
 	libparser "github.com/tomefile/lib-parser"
+	"gotest.tools/assert"
 )
 
-const ExampleProgram1 = `# Example program, привет мир 🟡!
-:include <std>
+var NoChildren = []libparser.Statement{}
 
-echo "Hello World!" \
-	"and another line" \
-	"and another."
-`
+var FileTestCases = map[string][]libparser.Statement{
+	"01_basic.tome": {
+		{
+			Kind:    libparser.SK_COMMENT,
+			Literal: " Example program, привет мир 🟡!",
+		},
+		{
+			Kind:     libparser.SK_DIRECTIVE,
+			Literal:  "include",
+			Args:     []string{"<std>"},
+			Children: NoChildren,
+		},
+		{
+			Kind:    libparser.SK_EXEC,
+			Literal: "echo",
+			Args:    []string{"Hello World!", "and another line", "and another."},
+		},
+	},
+}
 
-func TestParser(test *testing.T) {
-	var wg sync.WaitGroup
-	var buffer bytes.Buffer
+func TestAll(test *testing.T) {
+	dir := "data"
 
-	buffer.WriteString(ExampleProgram1)
+	entries, err := os.ReadDir(dir)
+	assert.NilError(test, err)
 
-	consumer := make(chan libparser.Statement)
-	parser := libparser.New(bufio.NewReader(&buffer), consumer)
-	wg.Go(parser.Parse)
-
-	for statement := range consumer {
-		fmt.Printf(
-			"==> %#v\n -> %q\n\n",
-			statement,
-			string([]byte(ExampleProgram1)[statement.OffsetStart:statement.OffsetEnd]),
-		)
-
-		switch statement.Kind {
-		case libparser.SK_NULL:
-		case libparser.SK_COMMENT:
-		case libparser.SK_DIRECTIVE:
-		case libparser.SK_EXEC:
-		case libparser.SK_MACRO:
-		case libparser.SK_READ_ERROR:
-		case libparser.SK_SYNTAX_ERROR:
-		default:
-			test.Errorf("unexpected libparser.StatementKind: %#v", statement.Kind)
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".tome") {
+			continue
 		}
+
+		file_path := filepath.Join(dir, entry.Name())
+
+		contents, err := os.ReadFile(file_path)
+		assert.NilError(test, err)
+
+		file, err := os.OpenFile(file_path, os.O_RDONLY, os.ModePerm)
+		assert.NilError(test, err)
+		defer file.Close()
+
+		testFile(test, file, entry.Name(), contents)
 	}
+}
+
+func testFile(test *testing.T, file *os.File, name string, buffer []byte) {
+	test.Run(name, func(test *testing.T) {
+		var wg sync.WaitGroup
+		defer wg.Wait()
+
+		test_case, exists := FileTestCases[name]
+		if !exists {
+			test.Errorf("missing test case for %q", name)
+		}
+
+		consumer := make(chan libparser.Statement)
+		parser := libparser.New(bufio.NewReader(file), consumer)
+
+		wg.Go(parser.Parse)
+
+		var i int
+		for statement := range consumer {
+			if len(test_case) <= i {
+				test.Errorf("unknown statement: %#v", statement)
+			}
+
+			data, err := json.MarshalIndent(statement, "", strings.Repeat(" ", 4))
+			assert.NilError(test, err)
+			test.Logf(
+				"%s\nRaw data: %q",
+				string(data),
+				string(buffer[statement.OffsetStart:statement.OffsetEnd]),
+			)
+
+			// Using individual fields because not every field is important
+			assert.DeepEqual(test, test_case[i].Kind, statement.Kind)
+			assert.DeepEqual(test, test_case[i].Literal, statement.Literal)
+			assert.DeepEqual(test, test_case[i].Args, statement.Args)
+			assert.DeepEqual(test, test_case[i].Children, statement.Children)
+			i++
+		}
+	})
 }
