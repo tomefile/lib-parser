@@ -2,6 +2,7 @@ package libparser
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"strings"
 
@@ -59,6 +60,9 @@ func (parser *Parser) parseStatement() Statement {
 		if err != nil {
 			return parser.failReading(err)
 		}
+		if len(name) == 0 {
+			return parser.failSyntax("missing a directive name after ':'")
+		}
 
 		args, err := parser.Reader.ReadPosArgs()
 		if err != nil && err != io.EOF {
@@ -96,6 +100,16 @@ func (parser *Parser) failReading(err error) Statement {
 	return Statement{
 		Kind:    SK_READ_ERROR,
 		Literal: err.Error(),
+
+		OffsetStart: parser.Reader.StoredOffset,
+		OffsetEnd:   parser.Reader.CurrentOffset,
+	}
+}
+
+func (parser *Parser) failSyntax(format string, a ...any) Statement {
+	return Statement{
+		Kind:    SK_SYNTAX_ERROR,
+		Literal: fmt.Sprintf(format, a...),
 
 		OffsetStart: parser.Reader.StoredOffset,
 		OffsetEnd:   parser.Reader.CurrentOffset,
