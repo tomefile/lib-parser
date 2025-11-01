@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 	"testing"
 
 	libparser "github.com/tomefile/lib-parser"
@@ -33,6 +32,7 @@ var FileTestCases = map[string][]libparser.Statement{
 			Args:    []string{"Hello World!", "and another line", "and another."},
 		},
 	},
+	"02_directive_body.tome": {},
 }
 
 func TestAll(test *testing.T) {
@@ -61,9 +61,6 @@ func TestAll(test *testing.T) {
 
 func testFile(test *testing.T, file *os.File, name string, buffer []byte) {
 	test.Run(name, func(test *testing.T) {
-		var wg sync.WaitGroup
-		defer wg.Wait()
-
 		test_case, exists := FileTestCases[name]
 		if !exists {
 			test.Fatalf("missing test case for %q", name)
@@ -72,7 +69,7 @@ func testFile(test *testing.T, file *os.File, name string, buffer []byte) {
 		consumer := make(chan libparser.Statement)
 		parser := libparser.New(bufio.NewReader(file), consumer)
 
-		wg.Go(parser.Parse)
+		go parser.Parse()
 
 		var i int
 		for statement := range consumer {
