@@ -12,14 +12,14 @@ import (
 type Parser struct {
 	Reader   *internal.AdvancedReader
 	Consumer chan Statement
-	parent   *Statement
+	parents  []*Statement
 }
 
 func New(reader *bufio.Reader, consumer chan Statement) *Parser {
 	return &Parser{
 		Reader:   internal.NewReader(reader),
 		Consumer: consumer,
-		parent:   nil,
+		parents:  []*Statement{},
 	}
 }
 
@@ -48,11 +48,13 @@ func (parser *Parser) parseStatement() Statement {
 	switch char {
 
 	case '}':
-		if parser.parent == nil {
+		if len(parser.parents) == 0 {
 			return parser.failSyntax("unexpected '}' closing a non-existant section")
 		}
-		parser.parent.OffsetEnd = parser.Reader.CurrentOffset
-		return *parser.parent
+		parent := parser.parents[len(parser.parents)-1]
+		parent.OffsetEnd = parser.Reader.CurrentOffset
+		parser.parents = parser.parents[:len(parser.parents)-1]
+		return *parent
 
 	case '\n', ' ', '\t', '\v':
 		return NullStatement
@@ -86,7 +88,7 @@ func (parser *Parser) parseStatement() Statement {
 		statement := parser.makeDirective(name, args, []Statement{})
 
 		if char == '{' {
-			parser.parent = &statement
+			parser.parents = append(parser.parents, &statement)
 			return NullStatement
 		} else {
 			return statement
@@ -137,8 +139,11 @@ func (parser *Parser) failSyntax(format string, a ...any) Statement {
 }
 
 func (parser *Parser) make(statement Statement) Statement {
-	if parser.parent != nil {
-		parser.parent.Children = append(parser.parent.Children, statement)
+	if len(parser.parents) != 0 {
+		parser.parents[len(parser.parents)-1].Children = append(
+			parser.parents[len(parser.parents)-1].Children,
+			statement,
+		)
 		return NullStatement
 	}
 
