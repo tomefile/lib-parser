@@ -127,7 +127,7 @@ func (parser *Parser) makeComment(comment string) Statement {
 
 func (parser *Parser) makeDirective(name string, args []string, children []Statement) Statement {
 	return Statement{
-		Kind:     SK_COMMENT,
+		Kind:     SK_DIRECTIVE,
 		Literal:  name,
 		Args:     args,
 		Children: children,
