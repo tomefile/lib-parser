@@ -106,6 +106,21 @@ var FileTestCases = map[string][]*libparser.Node{
 			},
 		},
 	},
+	"04_subcommand.tome": {
+		{
+			Type:    libparser.NODE_EXEC,
+			Literal: "echo",
+			Args: []any{
+				"123",
+				&libparser.Node{
+					Type:    libparser.NODE_EXEC,
+					Literal: "readlink",
+					Args:    []any{"-p", "$MY_LINK"},
+				},
+				"456",
+			},
+		},
+	},
 }
 
 func TestAll(test *testing.T) {
@@ -161,7 +176,25 @@ func testFile(test *testing.T, file *os.File, name string, buffer []byte) {
 			// Using individual fields because not every field is important
 			assert.DeepEqual(test, test_case[i].Type, node.Type)
 			assert.DeepEqual(test, test_case[i].Literal, node.Literal)
-			assert.DeepEqual(test, test_case[i].Args, node.Args)
+
+			if len(test_case[i].Args) != len(node.Args) {
+				test.Fatalf(
+					"expected to have %d args but got %d",
+					len(test_case[i].Args),
+					len(node.Args),
+				)
+			}
+			for j, arg := range test_case[i].Args {
+				switch arg := arg.(type) {
+				case *libparser.Node:
+					assert.DeepEqual(test, arg.Type, node.Args[j].(*libparser.Node).Type)
+					assert.DeepEqual(test, arg.Literal, node.Args[j].(*libparser.Node).Literal)
+					assert.DeepEqual(test, arg.Args, node.Args[j].(*libparser.Node).Args)
+				default:
+					assert.DeepEqual(test, arg, node.Args[j])
+				}
+			}
+
 			if len(test_case[i].Children) != len(node.Children) {
 				test.Fatalf(
 					"expected to have %d children but got %d",

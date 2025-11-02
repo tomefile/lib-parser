@@ -1,0 +1,1 @@
+echo 123 $(readlink -p $MY_LINK) 456

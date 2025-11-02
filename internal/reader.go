@@ -3,6 +3,7 @@ package internal
 import (
 	"bufio"
 	"errors"
+	"io"
 	"slices"
 	"strings"
 )
@@ -114,10 +115,12 @@ func (reader *AdvancedReader) ReadInsideQuotes(quote rune) (string, error) {
 	}
 }
 
-func (reader *AdvancedReader) ReadPosArgs() ([]any, error) {
+func (reader *AdvancedReader) ReadPosArgs(is_nested bool) ([]any, error) {
 	var builder strings.Builder
 	out := []any{}
 	is_escaped := false
+	expect_subcommand := false
+	parentheses_depth := 0
 
 	for {
 		// region: Temporary fix
@@ -136,6 +139,11 @@ func (reader *AdvancedReader) ReadPosArgs() ([]any, error) {
 		char, err := reader.Read()
 		if err != nil {
 			return out, err
+		}
+
+		if expect_subcommand && char != '(' {
+			expect_subcommand = false
+			builder.WriteRune('$')
 		}
 
 		switch char {
@@ -165,6 +173,31 @@ func (reader *AdvancedReader) ReadPosArgs() ([]any, error) {
 			}
 			out = append(out, contents)
 
+		case '$':
+			expect_subcommand = true
+
+		case '(':
+			parentheses_depth++
+			if expect_subcommand {
+				subcommand, err := reader.ReadSubcommand()
+				if err != nil {
+					return nil, err
+				}
+				out = append(out, subcommand)
+				expect_subcommand = false
+				continue
+			}
+			fallthrough
+
+		case ')':
+			parentheses_depth--
+			if is_nested && parentheses_depth <= 0 {
+				if builder.Len() != 0 {
+					out = append(out, builder.String())
+				}
+				return out, io.EOF
+			}
+
 		default:
 			if is_escaped {
 				builder.WriteRune('\\')
@@ -174,4 +207,29 @@ func (reader *AdvancedReader) ReadPosArgs() ([]any, error) {
 			builder.WriteRune(char)
 		}
 	}
+}
+
+type Subcommand struct {
+	Name    string
+	Args    []any
+	IsMacro bool
+}
+
+func (reader *AdvancedReader) ReadSubcommand() (*Subcommand, error) {
+	subcommand := &Subcommand{}
+
+	name, err := reader.ReadWord(NameCharset)
+	if err != nil {
+		return nil, err
+	}
+	subcommand.Name = strings.TrimSuffix(name, "!")
+	subcommand.IsMacro = strings.HasSuffix(name, "!")
+
+	args, err := reader.ReadPosArgs(true)
+	if err != nil && err != io.EOF {
+		return nil, err
+	}
+	subcommand.Args = args
+
+	return subcommand, nil
 }

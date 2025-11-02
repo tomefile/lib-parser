@@ -116,10 +116,11 @@ func (parser *Parser) next() *Node {
 			return parser.failSyntax("missing a directive name after ':'")
 		}
 
-		args, err := parser.Reader.ReadPosArgs()
+		args, err := parser.Reader.ReadPosArgs(false)
 		if err != nil && err != io.EOF {
 			return parser.failReading(err)
 		}
+		args = parser.unfoldArgs(args)
 
 		char, err := parser.Reader.Read()
 		if err != nil && err != io.EOF {
@@ -148,10 +149,11 @@ func (parser *Parser) next() *Node {
 		}
 		name = string(char) + name // We read it previously
 
-		args, err := parser.Reader.ReadPosArgs()
+		args, err := parser.Reader.ReadPosArgs(false)
 		if err != nil && err != io.EOF {
 			return parser.failReading(err)
 		}
+		args = parser.unfoldArgs(args)
 
 		if strings.HasSuffix(name, "!") {
 			name = strings.TrimSuffix(name, "!")
@@ -167,4 +169,18 @@ func (parser *Parser) parentNode() *Node {
 		return nil
 	}
 	return parser.breadcrumbs[len(parser.breadcrumbs)-1]
+}
+
+func (parser *Parser) unfoldArgs(args []any) []any {
+	for i, arg := range args {
+		switch arg := arg.(type) {
+		case *internal.Subcommand:
+			if arg.IsMacro {
+				args[i] = parser.makeMacro(arg.Name, parser.unfoldArgs(arg.Args))
+			} else {
+				args[i] = parser.makeExec(arg.Name, parser.unfoldArgs(arg.Args))
+			}
+		}
+	}
+	return args
 }
