@@ -2,6 +2,7 @@ package internal
 
 import (
 	"bufio"
+	"errors"
 	"slices"
 	"strings"
 )
@@ -93,6 +94,26 @@ func DelimCharset(delims ...rune) CharsetMatcher {
 	}
 }
 
+func (reader *AdvancedReader) ReadInsideQuotes(quote rune) (string, error) {
+	var builder strings.Builder
+
+	for {
+		char, err := reader.Read()
+		if err != nil {
+			return builder.String(), err
+		}
+
+		switch char {
+		case quote:
+			return builder.String(), nil
+		case '\n':
+			return builder.String(), errors.New("unexpected new line inside of quotes")
+		}
+
+		builder.WriteRune(char)
+	}
+}
+
 func (reader *AdvancedReader) ReadPosArgs() ([]any, error) {
 	var builder strings.Builder
 	out := []any{}
@@ -138,8 +159,7 @@ func (reader *AdvancedReader) ReadPosArgs() ([]any, error) {
 			}
 
 		case '"', '`', '\'':
-			// FIXME: Quotes don't have to be closed to be valid. This isn't good
-			contents, err := reader.ReadWord(DelimCharset(char, '\n'))
+			contents, err := reader.ReadInsideQuotes(char)
 			if err != nil {
 				return nil, err
 			}
