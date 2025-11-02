@@ -93,9 +93,9 @@ func DelimCharset(delims ...rune) CharsetMatcher {
 	}
 }
 
-func (reader *AdvancedReader) ReadPosArgs() ([]string, error) {
+func (reader *AdvancedReader) ReadPosArgs() ([]any, error) {
 	var builder strings.Builder
-	out := []string{}
+	out := []any{}
 	is_escaped := false
 
 	for {

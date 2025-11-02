@@ -10,34 +10,34 @@ import (
 )
 
 type Parser struct {
-	Reader   *internal.AdvancedReader
-	Consumer chan Statement
-	parents  []*Statement
+	Reader      *internal.AdvancedReader
+	Consumer    chan *Node
+	breadcrumbs []*Node
 }
 
-func New(reader *bufio.Reader, consumer chan Statement) *Parser {
+func New(reader *bufio.Reader, consumer chan *Node) *Parser {
 	return &Parser{
-		Reader:   internal.NewReader(reader),
-		Consumer: consumer,
-		parents:  []*Statement{},
+		Reader:      internal.NewReader(reader),
+		Consumer:    consumer,
+		breadcrumbs: []*Node{},
 	}
 }
 
-func (parser *Parser) Parse() {
+func (parser *Parser) ParseImmediately() {
 	defer close(parser.Consumer)
 
 	for {
-		statement := parser.parseStatement()
-		if statement.IsConsumable() {
-			parser.Consumer <- statement
+		node := parser.parseNext()
+		if node.IsConsumable() {
+			parser.Consumer <- node
 		}
-		if statement.IsError() {
+		if node.IsError() {
 			break
 		}
 	}
 }
 
-func (parser *Parser) parseStatement() Statement {
+func (parser *Parser) parseNext() *Node {
 	parser.Reader.RememberOffset()
 
 	char, err := parser.Reader.Read()
@@ -48,16 +48,16 @@ func (parser *Parser) parseStatement() Statement {
 	switch char {
 
 	case '}':
-		if len(parser.parents) == 0 {
+		if len(parser.breadcrumbs) == 0 {
 			return parser.failSyntax("unexpected '}' closing a non-existant section")
 		}
-		parent := parser.parents[len(parser.parents)-1]
+		parent := parser.breadcrumbs[len(parser.breadcrumbs)-1]
 		parent.OffsetEnd = parser.Reader.CurrentOffset
-		parser.parents = parser.parents[:len(parser.parents)-1]
-		return *parent
+		parser.breadcrumbs = parser.breadcrumbs[:len(parser.breadcrumbs)-1]
+		return parent
 
 	case '\n', ' ', '\t', '\v':
-		return NullStatement
+		return Null
 
 	case '#':
 		line, err := parser.Reader.ReadWord(internal.DelimCharset('\n'))
@@ -85,13 +85,13 @@ func (parser *Parser) parseStatement() Statement {
 			return parser.failReading(err)
 		}
 
-		statement := parser.makeDirective(name, args, []Statement{})
+		node := parser.makeDirective(name, args, []*Node{})
 
 		if char == '{' {
-			parser.parents = append(parser.parents, &statement)
-			return NullStatement
+			parser.breadcrumbs = append(parser.breadcrumbs, node)
+			return Null
 		} else {
-			return statement
+			return node
 		}
 
 	default:
@@ -115,12 +115,12 @@ func (parser *Parser) parseStatement() Statement {
 	}
 }
 
-func (parser *Parser) failReading(err error) Statement {
+func (parser *Parser) failReading(err error) *Node {
 	if err == io.EOF {
-		return Statement{Kind: SK_EOF_ERROR}
+		return &Node{Type: NODE_ERROR_EOF}
 	}
-	return Statement{
-		Kind:    SK_READ_ERROR,
+	return &Node{
+		Type:    NODE_ERROR_READ,
 		Literal: err.Error(),
 
 		OffsetStart: parser.Reader.StoredOffset,
@@ -128,9 +128,9 @@ func (parser *Parser) failReading(err error) Statement {
 	}
 }
 
-func (parser *Parser) failSyntax(format string, a ...any) Statement {
-	return Statement{
-		Kind:    SK_SYNTAX_ERROR,
+func (parser *Parser) failSyntax(format string, a ...any) *Node {
+	return &Node{
+		Type:    NODE_ERROR_SYNTAX,
 		Literal: fmt.Sprintf(format, a...),
 
 		OffsetStart: parser.Reader.StoredOffset,
@@ -138,21 +138,17 @@ func (parser *Parser) failSyntax(format string, a ...any) Statement {
 	}
 }
 
-func (parser *Parser) make(statement Statement) Statement {
-	if len(parser.parents) != 0 {
-		parser.parents[len(parser.parents)-1].Children = append(
-			parser.parents[len(parser.parents)-1].Children,
-			statement,
-		)
-		return NullStatement
+func (parser *Parser) make(node *Node) *Node {
+	if len(parser.breadcrumbs) != 0 {
+		node.Parent = parser.breadcrumbs[len(parser.breadcrumbs)-1]
 	}
 
-	return statement
+	return node
 }
 
-func (parser *Parser) makeComment(comment string) Statement {
-	return parser.make(Statement{
-		Kind:    SK_COMMENT,
+func (parser *Parser) makeComment(comment string) *Node {
+	return parser.make(&Node{
+		Type:    NODE_COMMENT,
 		Literal: comment,
 
 		OffsetStart: parser.Reader.StoredOffset,
@@ -160,9 +156,9 @@ func (parser *Parser) makeComment(comment string) Statement {
 	})
 }
 
-func (parser *Parser) makeDirective(name string, args []string, children []Statement) Statement {
-	return parser.make(Statement{
-		Kind:     SK_DIRECTIVE,
+func (parser *Parser) makeDirective(name string, args []any, children []*Node) *Node {
+	return parser.make(&Node{
+		Type:     NODE_DIRECTIVE,
 		Literal:  name,
 		Args:     args,
 		Children: children,
@@ -172,9 +168,9 @@ func (parser *Parser) makeDirective(name string, args []string, children []State
 	})
 }
 
-func (parser *Parser) makeMacro(name string, args []string) Statement {
-	return parser.make(Statement{
-		Kind:    SK_MACRO,
+func (parser *Parser) makeMacro(name string, args []any) *Node {
+	return parser.make(&Node{
+		Type:    NODE_MACRO,
 		Literal: name,
 		Args:    args,
 
@@ -183,9 +179,9 @@ func (parser *Parser) makeMacro(name string, args []string) Statement {
 	})
 }
 
-func (parser *Parser) makeExec(name string, args []string) Statement {
-	return parser.make(Statement{
-		Kind:    SK_EXEC,
+func (parser *Parser) makeExec(name string, args []any) *Node {
+	return parser.make(&Node{
+		Type:    NODE_EXEC,
 		Literal: name,
 		Args:    args,
 

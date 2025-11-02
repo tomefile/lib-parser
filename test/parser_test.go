@@ -12,46 +12,92 @@ import (
 	"gotest.tools/assert"
 )
 
-var NoChildren = []libparser.Statement{}
+var NoChildren = []*libparser.Node{}
 
-var FileTestCases = map[string][]libparser.Statement{
+var FileTestCases = map[string][]*libparser.Node{
 	"01_basic.tome": {
 		{
-			Kind:    libparser.SK_COMMENT,
+			Type:    libparser.NODE_COMMENT,
 			Literal: " Example program, привет мир 🟡!",
 		},
 		{
-			Kind:     libparser.SK_DIRECTIVE,
+			Type:     libparser.NODE_DIRECTIVE,
 			Literal:  "include",
-			Args:     []string{"<std>"},
+			Args:     []any{"<std>"},
 			Children: NoChildren,
 		},
 		{
-			Kind:    libparser.SK_EXEC,
+			Type:    libparser.NODE_EXEC,
 			Literal: "echo",
-			Args:    []string{"Hello World!", "and another line", "and another."},
+			Args:    []any{"Hello World!", "and another line", "and another."},
 		},
 	},
 	"02_directive_body.tome": {
 		{
-			Kind:    libparser.SK_EXEC,
+			Type:    libparser.NODE_EXEC,
 			Literal: "echo",
-			Args:    []string{"1"},
+			Args:    []any{"1"},
 		},
 		{
-			Kind:    libparser.SK_DIRECTIVE,
+			Type:    libparser.NODE_DIRECTIVE,
 			Literal: "section",
-			Args:    []string{"Hello World!"},
-			Children: []libparser.Statement{
+			Args:    []any{"Hello World!"},
+			Children: []*libparser.Node{
 				{
-					Kind:    libparser.SK_EXEC,
+					Type:    libparser.NODE_EXEC,
 					Literal: "echo",
-					Args:    []string{"1.1"},
+					Args:    []any{"1.1"},
 				},
 				{
-					Kind:    libparser.SK_EXEC,
+					Type:    libparser.NODE_EXEC,
 					Literal: "echo",
-					Args:    []string{"1.2"},
+					Args:    []any{"1.2"},
+				},
+			},
+		},
+	},
+	"03_directive_nested.tome": {
+		{
+			Type:    libparser.NODE_EXEC,
+			Literal: "echo",
+			Args:    []any{"1"},
+		},
+		{
+			Type:    libparser.NODE_DIRECTIVE,
+			Literal: "section",
+			Args:    []any{"Hello World!"},
+			Children: []*libparser.Node{
+				{
+					Type:    libparser.NODE_EXEC,
+					Literal: "echo",
+					Args:    []any{"1.1"},
+				},
+				{
+					Type:    libparser.NODE_EXEC,
+					Literal: "echo",
+					Args:    []any{"1.2"},
+				},
+				{
+					Type:    libparser.NODE_DIRECTIVE,
+					Literal: "section",
+					Args:    []any{"Nested"},
+					Children: []*libparser.Node{
+						{
+							Type:    libparser.NODE_EXEC,
+							Literal: "echo",
+							Args:    []any{"2.1"},
+						},
+						{
+							Type:    libparser.NODE_EXEC,
+							Literal: "echo",
+							Args:    []any{"2.2"},
+						},
+					},
+				},
+				{
+					Type:    libparser.NODE_EXEC,
+					Literal: "echo",
+					Args:    []any{"1.3"},
 				},
 			},
 		},
@@ -89,40 +135,40 @@ func testFile(test *testing.T, file *os.File, name string, buffer []byte) {
 			test.Fatalf("missing test case for %q", name)
 		}
 
-		consumer := make(chan libparser.Statement)
+		consumer := make(chan *libparser.Node)
 		parser := libparser.New(bufio.NewReader(file), consumer)
 
-		go parser.Parse()
+		go parser.ParseImmediately()
 
 		var i int
-		for statement := range consumer {
+		for node := range consumer {
 			if len(test_case) <= i {
-				test.Fatalf("unknown statement: %#v", statement)
+				test.Fatalf("unknown node: %#v", node)
 			}
 
-			data, err := json.MarshalIndent(statement, "", strings.Repeat(" ", 4))
+			data, err := json.MarshalIndent(node, "", strings.Repeat(" ", 4))
 			assert.NilError(test, err)
 			test.Logf(
 				"%s\nRaw data: %q",
 				string(data),
-				string(buffer[statement.OffsetStart:statement.OffsetEnd]),
+				string(buffer[node.OffsetStart:node.OffsetEnd]),
 			)
 
 			// Using individual fields because not every field is important
-			assert.DeepEqual(test, test_case[i].Kind, statement.Kind)
-			assert.DeepEqual(test, test_case[i].Literal, statement.Literal)
-			assert.DeepEqual(test, test_case[i].Args, statement.Args)
-			if len(test_case[i].Children) != len(statement.Children) {
+			assert.DeepEqual(test, test_case[i].Type, node.Type)
+			assert.DeepEqual(test, test_case[i].Literal, node.Literal)
+			assert.DeepEqual(test, test_case[i].Args, node.Args)
+			if len(test_case[i].Children) != len(node.Children) {
 				test.Fatalf(
 					"expected to have %d children but got %d",
 					len(test_case[i].Children),
-					len(statement.Children),
+					len(node.Children),
 				)
 			}
 			for j, child := range test_case[i].Children {
-				assert.DeepEqual(test, child.Kind, statement.Children[j].Kind)
-				assert.DeepEqual(test, child.Literal, statement.Children[j].Literal)
-				assert.DeepEqual(test, child.Args, statement.Children[j].Args)
+				assert.DeepEqual(test, child.Type, node.Children[j].Type)
+				assert.DeepEqual(test, child.Literal, node.Children[j].Literal)
+				assert.DeepEqual(test, child.Args, node.Children[j].Args)
 			}
 			i++
 		}
