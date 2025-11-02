@@ -23,7 +23,8 @@ func New(reader *bufio.Reader, consumer chan *Node) *Parser {
 	}
 }
 
-func (parser *Parser) ParseImmediately() {
+// Returns [Node]s as they are read. Refer to [Node.Parent] instead of Parent.Children
+func (parser *Parser) ParseIncomplete() {
 	defer close(parser.Consumer)
 
 	for {
@@ -33,6 +34,33 @@ func (parser *Parser) ParseImmediately() {
 		}
 		if node.IsError() {
 			break
+		}
+	}
+}
+
+// Returns [Node]s once all of their children have been processed first.
+func (parser *Parser) ParseComplete() {
+	defer close(parser.Consumer)
+
+	var pivot *Node
+
+	for {
+		node := parser.parseNext()
+		if node.IsError() {
+			if node.IsConsumable() {
+				parser.Consumer <- node
+			}
+			break
+		}
+
+		if node.Parent == nil {
+			if node.IsConsumable() {
+				parser.Consumer <- node
+			}
+		} else {
+			pivot = node.Parent
+			pivot.Children = append(pivot.Children, node)
+			node.Parent = nil
 		}
 	}
 }

@@ -1,0 +1,14 @@
+echo 1
+
+:section "Hello World!" {
+	echo '1.1'
+	echo 1.2
+
+	:section "Nested" {
+		# This is nested inside
+		echo 2.1
+		echo 2.2
+	}
+
+	echo 1.3
+}

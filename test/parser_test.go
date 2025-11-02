@@ -83,6 +83,10 @@ var FileTestCases = map[string][]*libparser.Node{
 					Args:    []any{"Nested"},
 					Children: []*libparser.Node{
 						{
+							Type:    libparser.NODE_COMMENT,
+							Literal: " This is nested inside",
+						},
+						{
 							Type:    libparser.NODE_EXEC,
 							Literal: "echo",
 							Args:    []any{"2.1"},
@@ -138,7 +142,7 @@ func testFile(test *testing.T, file *os.File, name string, buffer []byte) {
 		consumer := make(chan *libparser.Node)
 		parser := libparser.New(bufio.NewReader(file), consumer)
 
-		go parser.ParseImmediately()
+		go parser.ParseComplete()
 
 		var i int
 		for node := range consumer {
