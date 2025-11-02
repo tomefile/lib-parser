@@ -2,7 +2,6 @@ package libparser
 
 import (
 	"bufio"
-	"fmt"
 	"io"
 	"strings"
 
@@ -10,62 +9,81 @@ import (
 )
 
 type Parser struct {
-	Reader      *internal.AdvancedReader
-	Consumer    chan *Node
+	Reader  *internal.AdvancedReader
+	Channel chan *Node
+
 	breadcrumbs []*Node
 }
 
 func New(reader *bufio.Reader, consumer chan *Node) *Parser {
 	return &Parser{
 		Reader:      internal.NewReader(reader),
-		Consumer:    consumer,
+		Channel:     consumer,
 		breadcrumbs: []*Node{},
 	}
 }
 
-// Returns [Node]s as they are read. Refer to [Node.Parent] instead of Parent.Children
-func (parser *Parser) ParseIncomplete() {
-	defer close(parser.Consumer)
+// Nodes are returned as soon as they are read (fast).
+// Sets [Node.Parent].
+// [Node.Children] is always nil
+func (parser *Parser) ParseFragmented() {
+	defer close(parser.Channel)
 
 	for {
-		node := parser.parseNext()
-		if node.IsConsumable() {
-			parser.Consumer <- node
+		node := parser.next()
+		if node == nil { // EOF
+			return
 		}
+
+		if node == Null {
+			continue
+		}
+
+		parser.Channel <- node
 		if node.IsError() {
-			break
+			return
 		}
 	}
 }
 
-// Returns [Node]s once all of their children have been processed first.
+// Nodes are returned only once all of their children are read (slow).
+// Sets [Node.Children] if applicable.
+// [Node.Parent] is always nil to prevent pointer recursion
 func (parser *Parser) ParseComplete() {
-	defer close(parser.Consumer)
+	defer close(parser.Channel)
 
-	var pivot *Node
+	var buffered *Node
 
 	for {
-		node := parser.parseNext()
-		if node.IsError() {
-			if node.IsConsumable() {
-				parser.Consumer <- node
+		node := parser.next()
+		if node == nil { // EOF
+			if buffered != nil {
+				parser.Channel <- buffered
 			}
-			break
+			return
+		}
+
+		if node == Null {
+			continue
 		}
 
 		if node.Parent == nil {
-			if node.IsConsumable() {
-				parser.Consumer <- node
+			if buffered != nil {
+				parser.Channel <- buffered
 			}
+			buffered = node
 		} else {
-			pivot = node.Parent
-			pivot.Children = append(pivot.Children, node)
+			node.Parent.Children = append(node.Parent.Children, node)
 			node.Parent = nil
+		}
+
+		if node.IsError() {
+			return
 		}
 	}
 }
 
-func (parser *Parser) parseNext() *Node {
+func (parser *Parser) next() *Node {
 	parser.Reader.RememberOffset()
 
 	char, err := parser.Reader.Read()
@@ -75,24 +93,15 @@ func (parser *Parser) parseNext() *Node {
 
 	switch char {
 
-	case '}':
-		if len(parser.breadcrumbs) == 0 {
-			return parser.failSyntax("unexpected '}' closing a non-existant section")
-		}
-		parent := parser.breadcrumbs[len(parser.breadcrumbs)-1]
-		parent.OffsetEnd = parser.Reader.CurrentOffset
-		parser.breadcrumbs = parser.breadcrumbs[:len(parser.breadcrumbs)-1]
-		return parent
-
 	case '\n', ' ', '\t', '\v':
 		return Null
 
 	case '#':
-		line, err := parser.Reader.ReadWord(internal.DelimCharset('\n'))
+		comment, err := parser.Reader.ReadWord(internal.DelimCharset('\n'))
 		if err != nil {
 			return parser.failReading(err)
 		}
-		return parser.makeComment(line)
+		return parser.makeComment(comment)
 
 	case ':':
 		name, err := parser.Reader.ReadWord(internal.NameCharset)
@@ -113,14 +122,20 @@ func (parser *Parser) parseNext() *Node {
 			return parser.failReading(err)
 		}
 
-		node := parser.makeDirective(name, args, []*Node{})
+		node := parser.makeDirective(name, args)
 
 		if char == '{' {
 			parser.breadcrumbs = append(parser.breadcrumbs, node)
-			return Null
-		} else {
-			return node
 		}
+		return node
+
+	case '}':
+		if len(parser.breadcrumbs) == 0 {
+			return parser.failSyntax("unexpected '}' closing a non-existant section")
+		}
+		parser.parentNode().OffsetEnd = parser.Reader.CurrentOffset
+		parser.breadcrumbs = parser.breadcrumbs[:len(parser.breadcrumbs)-1]
+		return Null
 
 	default:
 		name, err := parser.Reader.ReadWord(internal.NameCharset)
@@ -143,77 +158,9 @@ func (parser *Parser) parseNext() *Node {
 	}
 }
 
-func (parser *Parser) failReading(err error) *Node {
-	if err == io.EOF {
-		return &Node{Type: NODE_ERROR_EOF}
+func (parser *Parser) parentNode() *Node {
+	if len(parser.breadcrumbs) == 0 {
+		return nil
 	}
-	return &Node{
-		Type:    NODE_ERROR_READ,
-		Literal: err.Error(),
-
-		OffsetStart: parser.Reader.StoredOffset,
-		OffsetEnd:   parser.Reader.CurrentOffset,
-	}
-}
-
-func (parser *Parser) failSyntax(format string, a ...any) *Node {
-	return &Node{
-		Type:    NODE_ERROR_SYNTAX,
-		Literal: fmt.Sprintf(format, a...),
-
-		OffsetStart: parser.Reader.StoredOffset,
-		OffsetEnd:   parser.Reader.CurrentOffset,
-	}
-}
-
-func (parser *Parser) make(node *Node) *Node {
-	if len(parser.breadcrumbs) != 0 {
-		node.Parent = parser.breadcrumbs[len(parser.breadcrumbs)-1]
-	}
-
-	return node
-}
-
-func (parser *Parser) makeComment(comment string) *Node {
-	return parser.make(&Node{
-		Type:    NODE_COMMENT,
-		Literal: comment,
-
-		OffsetStart: parser.Reader.StoredOffset,
-		OffsetEnd:   parser.Reader.CurrentOffset,
-	})
-}
-
-func (parser *Parser) makeDirective(name string, args []any, children []*Node) *Node {
-	return parser.make(&Node{
-		Type:     NODE_DIRECTIVE,
-		Literal:  name,
-		Args:     args,
-		Children: children,
-
-		OffsetStart: parser.Reader.StoredOffset,
-		OffsetEnd:   parser.Reader.CurrentOffset,
-	})
-}
-
-func (parser *Parser) makeMacro(name string, args []any) *Node {
-	return parser.make(&Node{
-		Type:    NODE_MACRO,
-		Literal: name,
-		Args:    args,
-
-		OffsetStart: parser.Reader.StoredOffset,
-		OffsetEnd:   parser.Reader.CurrentOffset,
-	})
-}
-
-func (parser *Parser) makeExec(name string, args []any) *Node {
-	return parser.make(&Node{
-		Type:    NODE_EXEC,
-		Literal: name,
-		Args:    args,
-
-		OffsetStart: parser.Reader.StoredOffset,
-		OffsetEnd:   parser.Reader.CurrentOffset,
-	})
+	return parser.breadcrumbs[len(parser.breadcrumbs)-1]
 }

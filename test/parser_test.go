@@ -146,10 +146,6 @@ func testFile(test *testing.T, file *os.File, name string, buffer []byte) {
 
 		var i int
 		for node := range consumer {
-			if len(test_case) <= i {
-				test.Fatalf("unknown node: %#v", node)
-			}
-
 			data, err := json.MarshalIndent(node, "", strings.Repeat(" ", 4))
 			assert.NilError(test, err)
 			test.Logf(
@@ -157,6 +153,10 @@ func testFile(test *testing.T, file *os.File, name string, buffer []byte) {
 				string(data),
 				string(buffer[node.OffsetStart:node.OffsetEnd]),
 			)
+
+			if len(test_case) <= i {
+				test.Fatalf("unknown node: %#v", node)
+			}
 
 			// Using individual fields because not every field is important
 			assert.DeepEqual(test, test_case[i].Type, node.Type)

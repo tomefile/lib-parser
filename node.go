@@ -11,10 +11,9 @@ const (
 
 	NODE_ERROR_READ
 	NODE_ERROR_SYNTAX
-	NODE_ERROR_EOF
 
 	ErrMin = NODE_ERROR_READ
-	ErrMax = NODE_ERROR_EOF
+	ErrMax = NODE_ERROR_SYNTAX
 )
 
 var Null = &Node{Type: NODE_NULL}
@@ -32,10 +31,6 @@ type Node struct {
 	OffsetEnd uint
 
 	Children []*Node // Optional
-}
-
-func (node *Node) IsConsumable() bool {
-	return node.Type != NODE_NULL && node.Type != NODE_ERROR_EOF
 }
 
 func (node *Node) IsError() bool {
