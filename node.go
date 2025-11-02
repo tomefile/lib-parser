@@ -29,6 +29,7 @@ type Node struct {
 	OffsetStart uint
 	// The offset in bytes where this node ends
 	OffsetEnd uint
+	Col, Row  uint
 
 	Children []*Node // Optional
 }

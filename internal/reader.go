@@ -15,8 +15,8 @@ type AdvancedReader struct {
 	StoredOffset  uint
 	CurrentOffset uint
 
-	Col uint
-	Row uint
+	PrevCol, PrevRow uint
+	Col, Row         uint
 }
 
 func NewReader(reader *bufio.Reader) *AdvancedReader {
@@ -44,6 +44,9 @@ func (reader *AdvancedReader) Peek() (byte, error) {
 
 // Reads the next UTF-8 rune
 func (reader *AdvancedReader) Read() (rune, error) {
+	reader.PrevRow = reader.Row
+	reader.PrevCol = reader.Col
+
 	char, size, err := reader.Inner.ReadRune()
 	if err != nil {
 		return 0, err
