@@ -3,8 +3,11 @@ package libparser
 func (parser *Parser) fillNodeOffsets(node *Node) *Node {
 	node.OffsetStart = parser.Reader.StoredOffset
 	node.OffsetEnd = parser.Reader.CurrentOffset
-	node.Col = parser.Reader.PrevCol
-	node.Row = parser.Reader.PrevRow
+	node.Col = parser.Reader.StoredCol
+	node.Row = parser.Reader.StoredRow
+	if node.Col < parser.Reader.PrevCol {
+		node.Length = parser.Reader.PrevCol - node.Col
+	}
 	return node
 }
 

@@ -29,7 +29,10 @@ type Node struct {
 	OffsetStart uint
 	// The offset in bytes where this node ends
 	OffsetEnd uint
-	Col, Row  uint
+
+	Col, Row uint
+	// Equals 0 if offset range is multi-line. Otherwise the length starting from [.Col]
+	Length uint
 
 	Children []*Node // Optional
 }

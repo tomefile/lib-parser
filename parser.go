@@ -89,6 +89,7 @@ func (parser *Parser) ParseComplete() {
 
 func (parser *Parser) next() *Node {
 	parser.Reader.RememberOffset()
+	parser.Reader.RememberPosition()
 
 	char, err := parser.Reader.Read()
 	if err != nil {
@@ -101,6 +102,7 @@ func (parser *Parser) next() *Node {
 		return Null
 
 	case '#':
+		parser.Reader.RememberPosition()
 		comment, err := parser.Reader.ReadWord(internal.DelimCharset('\n'))
 		if err != nil {
 			return parser.failReading(err)
@@ -108,6 +110,7 @@ func (parser *Parser) next() *Node {
 		return parser.makeComment(comment)
 
 	case ':':
+		parser.Reader.RememberPosition()
 		name, err := parser.Reader.ReadWord(internal.NameCharset)
 		if err != nil {
 			return parser.failReading(err)
@@ -116,12 +119,14 @@ func (parser *Parser) next() *Node {
 			return parser.failSyntax("missing a directive name after ':'")
 		}
 
+		parser.Reader.RememberPosition()
 		args, err := parser.Reader.ReadPosArgs(false)
 		if err != nil && err != io.EOF {
 			return parser.failReading(err)
 		}
 		args = parser.unfoldArgs(args)
 
+		parser.Reader.RememberPosition()
 		char, err := parser.Reader.Read()
 		if err != nil && err != io.EOF {
 			return parser.failReading(err)
@@ -143,12 +148,14 @@ func (parser *Parser) next() *Node {
 		return Null
 
 	default:
+		parser.Reader.RememberPosition()
 		name, err := parser.Reader.ReadWord(internal.NameCharset)
 		if err != nil {
 			return parser.failReading(err)
 		}
 		name = string(char) + name // We read it previously
 
+		parser.Reader.RememberPosition()
 		args, err := parser.Reader.ReadPosArgs(false)
 		if err != nil && err != io.EOF {
 			return parser.failReading(err)

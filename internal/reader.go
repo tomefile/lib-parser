@@ -15,22 +15,29 @@ type AdvancedReader struct {
 	StoredOffset  uint
 	CurrentOffset uint
 
-	PrevCol, PrevRow uint
-	Col, Row         uint
+	StoredCol, StoredRow uint
+	PrevCol, PrevRow     uint
+	Col, Row             uint
 }
 
 func NewReader(reader *bufio.Reader) *AdvancedReader {
 	return &AdvancedReader{
 		Inner:         reader,
-		StoredOffset:  0,
-		CurrentOffset: 0,
-		Col:           0,
-		Row:           0,
+		StoredOffset:  1,
+		CurrentOffset: 1,
+		Col:           1,
+		Row:           1,
 	}
 }
 
 func (reader *AdvancedReader) RememberOffset() *AdvancedReader {
 	reader.StoredOffset = reader.CurrentOffset
+	return reader
+}
+
+func (reader *AdvancedReader) RememberPosition() *AdvancedReader {
+	reader.StoredCol = reader.Col
+	reader.StoredRow = reader.Row
 	return reader
 }
 
