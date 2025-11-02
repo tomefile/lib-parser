@@ -67,6 +67,14 @@ func (parser *Parser) ParseComplete() {
 			continue
 		}
 
+		if node.IsError() {
+			if buffered != nil {
+				parser.Channel <- buffered
+			}
+			parser.Channel <- node
+			return
+		}
+
 		if node.Parent == nil {
 			if buffered != nil {
 				parser.Channel <- buffered
@@ -75,10 +83,6 @@ func (parser *Parser) ParseComplete() {
 		} else {
 			node.Parent.Children = append(node.Parent.Children, node)
 			node.Parent = nil
-		}
-
-		if node.IsError() {
-			return
 		}
 	}
 }
