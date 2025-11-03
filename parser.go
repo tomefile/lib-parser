@@ -127,7 +127,7 @@ func (parser *Parser) next() *Node {
 		args = parser.unfoldArgs(args)
 
 		parser.Reader.RememberPosition()
-		char, err := parser.Reader.Read()
+		char, err := parser.Reader.Peek()
 		if err != nil && err != io.EOF {
 			return parser.failReading(err)
 		}
@@ -135,6 +135,7 @@ func (parser *Parser) next() *Node {
 		node := parser.makeDirective(name, args)
 
 		if char == '{' {
+			parser.Reader.Read() // We Peek()-ed it earlier
 			parser.breadcrumbs = append(parser.breadcrumbs, node)
 		}
 		return node
