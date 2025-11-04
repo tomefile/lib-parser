@@ -25,17 +25,14 @@ func ParseArg(arg any) ([]ArgPart, error) {
 	out := []ArgPart{}
 	reader := bufio.NewReader(strings.NewReader(str_arg))
 
-	defer func() {
-		if builder.Len() != 0 {
-			out = append(out, newLiteralPart(&builder))
-			builder.Reset()
-		}
-	}()
-
 	for {
 		char, _, err := reader.ReadRune()
 		if err != nil {
 			if err == io.EOF {
+				if builder.Len() != 0 {
+					out = append(out, newLiteralPart(&builder))
+					builder.Reset()
+				}
 				return out, nil
 			}
 			return out, err
@@ -95,6 +92,7 @@ func readVariable(reader *bufio.Reader) (ArgPart, error) {
 			if internal.NameCharset(char) {
 				builder.WriteRune(char)
 			} else {
+				reader.UnreadRune()
 				return ArgPart{
 					Literal:    builder.String(),
 					Format:     nil,

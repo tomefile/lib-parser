@@ -212,7 +212,7 @@ func testFile(test *testing.T, file *os.File, name string, buffer []byte) {
 }
 
 func TestArgParser(test *testing.T) {
-	parts, err := libparser.ParseArg("hello $message")
+	parts, err := libparser.ParseArg("hello $message and others!")
 	assert.NilError(test, err)
 	assert.DeepEqual(test, parts, []libparser.ArgPart{
 		{
@@ -224,6 +224,11 @@ func TestArgParser(test *testing.T) {
 			Literal:    "message",
 			Format:     nil,
 			IsVariable: true,
+		},
+		{
+			Literal:    " and others!",
+			Format:     nil,
+			IsVariable: false,
 		},
 	})
 }
