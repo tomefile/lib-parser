@@ -140,6 +140,15 @@ func readVariableExpansion(reader *bufio.Reader) (ArgPart, error) {
 				builder.WriteRune(char)
 
 			case char == ':':
+				format, args, err := readVariableFormat(reader)
+				if err != nil && err != io.EOF {
+					return ArgPart{}, err
+				}
+				return ArgPart{
+					Literal:    builder.String(),
+					Format:     getVariableFormat(format, args),
+					IsVariable: true,
+				}, nil
 
 			case char == '}':
 				return ArgPart{
@@ -159,10 +168,29 @@ func readVariableExpansion(reader *bufio.Reader) (ArgPart, error) {
 	}
 }
 
+func readVariableFormat(reader *bufio.Reader) (string, []string, error) {
+	char, _, err := reader.ReadRune()
+	if err != nil {
+		return "", nil, err
+	}
+
+	switch char {
+
+	case '}':
+		return "", []string{}, nil
+	}
+
+	return "", nil, nil
+}
+
 func newLiteralPart(literal string) ArgPart {
 	return ArgPart{
 		Literal:    literal,
 		Format:     nil,
 		IsVariable: false,
 	}
+}
+
+func getVariableFormat(name string, args []string) func(string) string {
+	return nil
 }
