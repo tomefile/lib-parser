@@ -9,6 +9,17 @@ import (
 	"gotest.tools/assert"
 )
 
+const ModifierProbe = "PREFIXabc defg 123 XYZ_/hIwOrLd  (,./!@#$%^&*-=_+SUFFIX"
+
+type TestFormat struct {
+	Name           string
+	ModifierResult string
+}
+
+func (format TestFormat) Eval(_ libparser.Scope) (string, error) {
+	return format.Name, nil
+}
+
 type FormatterTestCase struct {
 	Input  string
 	Output []libparser.FormatPart
@@ -30,10 +41,27 @@ var FormatterTestCases = []FormatterTestCase{
 			},
 		},
 	},
+	{
+		Input: "hi ${message:trim_suffix SUFFIX} wow!",
+		Output: []libparser.FormatPart{
+			libparser.LiteralFormat{
+				Literal: "hi ",
+			},
+			libparser.VariableFormat{
+				Name:     "message",
+				Modifier: libparser.GetModifier("trim_suffix", []string{"SUFFIX"}),
+			},
+			libparser.LiteralFormat{
+				Literal: " wow!",
+			},
+		},
+	},
 }
 
 func TestFormatter(test *testing.T) {
 	for i, test_case := range FormatterTestCases {
+		test_case.Output = applyTestModifiers(test_case.Output)
+
 		test.Run(
 			fmt.Sprintf("%02d_with_%d_characters", i, len(test_case.Input)),
 			func(test *testing.T) {
@@ -42,8 +70,24 @@ func TestFormatter(test *testing.T) {
 				parts, err := formatter.Parse()
 				assert.NilError(test, err)
 
+				parts = applyTestModifiers(parts)
 				assert.DeepEqual(test, parts, test_case.Output)
 			},
 		)
 	}
+}
+
+func applyTestModifiers(parts []libparser.FormatPart) []libparser.FormatPart {
+	for i, part := range parts {
+		switch part := part.(type) {
+		case libparser.VariableFormat:
+			if part.Modifier != nil {
+				parts[i] = TestFormat{
+					Name:           part.Name,
+					ModifierResult: part.Modifier(ModifierProbe),
+				}
+			}
+		}
+	}
+	return parts
 }
