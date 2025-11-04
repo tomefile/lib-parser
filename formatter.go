@@ -101,7 +101,7 @@ func (formatter *Formatter) parseExpansion() (FormatPart, error) {
 		char, err := formatter.Read()
 		if err != nil {
 			if err == io.EOF {
-				return VariableFormat{Name: name, Modifier: nil}, nil
+				return nil, fmt.Errorf("unexpected end of file inside of variable expansion")
 			}
 			return nil, err
 		}
