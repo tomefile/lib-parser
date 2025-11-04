@@ -30,7 +30,7 @@ func ParseArg(arg any) ([]ArgPart, error) {
 		if err != nil {
 			if err == io.EOF {
 				if builder.Len() != 0 {
-					out = append(out, newLiteralPart(&builder))
+					out = append(out, newLiteralPart(builder.String()))
 					builder.Reset()
 				}
 				return out, nil
@@ -42,7 +42,7 @@ func ParseArg(arg any) ([]ArgPart, error) {
 
 		case '$':
 			if builder.Len() != 0 {
-				out = append(out, newLiteralPart(&builder))
+				out = append(out, newLiteralPart(builder.String()))
 				builder.Reset()
 			}
 			part, err := readVariable(reader)
@@ -104,12 +104,23 @@ func readVariable(reader *bufio.Reader) (ArgPart, error) {
 }
 
 func readVariableExpansion(reader *bufio.Reader) (ArgPart, error) {
+	char, _, err := reader.ReadRune()
+	if err != nil {
+		return ArgPart{}, err
+	}
+
+	switch char {
+
+	case '}':
+		return newLiteralPart("${}"), nil
+	}
+
 	return ArgPart{}, nil
 }
 
-func newLiteralPart(builder *strings.Builder) ArgPart {
+func newLiteralPart(literal string) ArgPart {
 	return ArgPart{
-		Literal:    builder.String(),
+		Literal:    literal,
 		Format:     nil,
 		IsVariable: false,
 	}
