@@ -68,12 +68,12 @@ func (formatter *Formatter) parseVariable() (FormatPart, error) {
 		return formatter.parseExpansion()
 
 	default:
-		name, err := formatter.parseName(char)
+		name, err := formatter.parseExpectedName(char)
 		if err != nil {
 			return nil, err
 		}
 		return VariableFormat{
-			Name:     name,
+			Name:     string(char) + name,
 			Modifier: nil,
 		}, nil
 	}
@@ -92,10 +92,11 @@ func (formatter *Formatter) parseExpansion() (FormatPart, error) {
 		return LiteralFormat{Literal: "${}"}, nil
 
 	default:
-		name, err := formatter.parseName(char)
+		name, err := formatter.parseExpectedName(char)
 		if err != nil {
 			return nil, err
 		}
+		name = string(char) + name
 
 		char, err := formatter.Read()
 		if err != nil {
@@ -131,17 +132,50 @@ func (formatter *Formatter) parseExpansion() (FormatPart, error) {
 }
 
 func (formatter *Formatter) parseFormat() (string, []string, error) {
-	// TODO:
-	return "", nil, nil
+	name, err := formatter.parseName()
+	if err != nil {
+		return "", nil, err
+	}
+
+	args := []string{}
+
+	for {
+		char, err := formatter.Read()
+		if err != nil {
+			return name, nil, err
+		}
+
+		switch char {
+
+		case ' ':
+			arg, err := formatter.parseName()
+			if err != nil {
+				return name, nil, err
+			}
+			args = append(args, arg)
+
+		case '}':
+			return name, args, nil
+
+		default:
+			return name, nil, fmt.Errorf(
+				"unexpected character %q in a variable format",
+				char,
+			)
+		}
+	}
 }
 
-func (formatter *Formatter) parseName(first_char rune) (string, error) {
+func (formatter *Formatter) parseExpectedName(first_char rune) (string, error) {
 	if !internal.NameCharset(first_char) {
 		return "", fmt.Errorf("unexpected character %q", first_char)
 	}
 
+	return formatter.parseName()
+}
+
+func (formatter *Formatter) parseName() (string, error) {
 	var builder strings.Builder
-	builder.WriteRune(first_char)
 
 	for {
 		char, err := formatter.Read()
