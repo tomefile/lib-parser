@@ -246,4 +246,19 @@ func TestArgParser(test *testing.T) {
 			IsVariable: false,
 		},
 	})
+
+	parts, err = libparser.ParseArg("hi ${world}")
+	assert.NilError(test, err)
+	assert.DeepEqual(test, parts, []libparser.ArgPart{
+		{
+			Literal:    "hi ",
+			Format:     nil,
+			IsVariable: false,
+		},
+		{
+			Literal:    "world",
+			Format:     nil,
+			IsVariable: true,
+		},
+	})
 }

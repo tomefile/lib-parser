@@ -113,9 +113,50 @@ func readVariableExpansion(reader *bufio.Reader) (ArgPart, error) {
 
 	case '}':
 		return newLiteralPart("${}"), nil
-	}
 
-	return ArgPart{}, nil
+	default:
+		if !internal.NameCharset(char) {
+			return ArgPart{}, fmt.Errorf("unexpected character %q in name", char)
+		}
+		var builder strings.Builder
+		builder.WriteRune(char)
+
+		for {
+			char, _, err := reader.ReadRune()
+			if err != nil {
+				if err == io.EOF {
+					return ArgPart{
+						Literal:    builder.String(),
+						Format:     nil,
+						IsVariable: true,
+					}, nil
+				}
+				return ArgPart{}, err
+			}
+
+			switch {
+
+			case internal.NameCharset(char):
+				builder.WriteRune(char)
+
+			case char == ':':
+
+			case char == '}':
+				return ArgPart{
+					Literal:    builder.String(),
+					Format:     nil,
+					IsVariable: true,
+				}, nil
+
+			default:
+				reader.UnreadRune()
+				return ArgPart{}, fmt.Errorf(
+					"unexpected character %q in a variable expansion",
+					char,
+				)
+			}
+		}
+	}
 }
 
 func newLiteralPart(literal string) ArgPart {
