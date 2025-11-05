@@ -85,20 +85,21 @@ func (formatter *Formatter) parseExpansion() (FormatPart, error) {
 		return nil, err
 	}
 
-	switch char {
+	is_optional := false
 
-	case '}':
+	if char == '}' {
 		// Treat empty variable expansions as a literal string
 		return LiteralFormat{Literal: "${}"}, nil
+	}
 
-	default:
-		name, err := formatter.parseExpectedName(char)
-		if err != nil {
-			return nil, err
-		}
-		name = string(char) + name
+	name, err := formatter.parseExpectedName(char)
+	if err != nil {
+		return nil, err
+	}
+	name = string(char) + name
 
-		char, err := formatter.Read()
+	for {
+		char, err = formatter.Read()
 		if err != nil {
 			if err == io.EOF {
 				return nil, fmt.Errorf("unexpected end of file inside of variable expansion")
@@ -108,18 +109,26 @@ func (formatter *Formatter) parseExpansion() (FormatPart, error) {
 
 		switch char {
 
+		case '?':
+			is_optional = true
+
 		case ':':
 			format, args, err := formatter.parseFormat()
 			if err != nil && err != io.EOF {
 				return nil, err
 			}
 			return VariableFormat{
-				Name:     name,
-				Modifier: GetModifier(format, args),
+				Name:       name,
+				Modifier:   GetModifier(format, args),
+				IsOptional: is_optional,
 			}, nil
 
 		case '}':
-			return VariableFormat{Name: name, Modifier: nil}, nil
+			return VariableFormat{
+				Name:       name,
+				Modifier:   nil,
+				IsOptional: is_optional,
+			}, nil
 
 		default:
 			formatter.Reader.UnreadRune()

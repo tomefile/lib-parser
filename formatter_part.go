@@ -19,13 +19,17 @@ func (format LiteralFormat) Eval(_ Scope) (string, error) {
 }
 
 type VariableFormat struct {
-	Name     string
-	Modifier FormatModifier
+	Name       string
+	Modifier   FormatModifier
+	IsOptional bool
 }
 
 func (format VariableFormat) Eval(scope Scope) (string, error) {
 	value, exists := scope[format.Name]
 	if !exists {
+		if format.IsOptional {
+			return "", nil
+		}
 		return format.Name, fmt.Errorf("variable %q is not defined", value)
 	}
 

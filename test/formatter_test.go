@@ -14,6 +14,7 @@ const ModifierProbe = "PREFIXabc defg 123 XYZ_/hIwOrLd  (,./!@#$%^&*-=_+SUFFIX"
 type TestFormat struct {
 	Name           string
 	ModifierResult string
+	IsOptional     bool
 }
 
 func (format TestFormat) Eval(_ libparser.Scope) (string, error) {
@@ -33,8 +34,9 @@ var FormatterTestCases = []FormatterTestCase{
 				Literal: "hello ",
 			},
 			libparser.VariableFormat{
-				Name:     "message",
-				Modifier: nil,
+				Name:       "message",
+				Modifier:   nil,
+				IsOptional: false,
 			},
 			libparser.LiteralFormat{
 				Literal: " and others!",
@@ -48,11 +50,30 @@ var FormatterTestCases = []FormatterTestCase{
 				Literal: "hi ",
 			},
 			libparser.VariableFormat{
-				Name:     "message",
-				Modifier: libparser.GetModifier("trim_suffix", []string{"SUFFIX"}),
+				Name:       "message",
+				Modifier:   libparser.GetModifier("trim_suffix", []string{"SUFFIX"}),
+				IsOptional: false,
 			},
 			libparser.LiteralFormat{
 				Literal: " wow!",
+			},
+		},
+	},
+	{
+		Input: "hi ${message?:trim_suffix SUFFIX}${optional?}",
+		Output: []libparser.FormatPart{
+			libparser.LiteralFormat{
+				Literal: "hi ",
+			},
+			libparser.VariableFormat{
+				Name:       "message",
+				Modifier:   libparser.GetModifier("trim_suffix", []string{"SUFFIX"}),
+				IsOptional: true,
+			},
+			libparser.VariableFormat{
+				Name:       "optional",
+				Modifier:   nil,
+				IsOptional: true,
 			},
 		},
 	},
@@ -85,6 +106,7 @@ func applyTestModifiers(parts []libparser.FormatPart) []libparser.FormatPart {
 				parts[i] = TestFormat{
 					Name:           part.Name,
 					ModifierResult: part.Modifier(ModifierProbe),
+					IsOptional:     part.IsOptional,
 				}
 			}
 		}
