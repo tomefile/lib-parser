@@ -81,6 +81,7 @@ func (reader *AdvancedReader) ReadWord(charset_matcher CharsetMatcher) (string, 
 		}
 
 		if !charset_matcher(char) {
+			reader.Inner.UnreadRune()
 			return builder.String(), nil
 		}
 
