@@ -8,6 +8,8 @@ require (
 )
 
 require (
+	github.com/bbfh-dev/lib-ansi-escapes v0.3.5 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	golang.org/x/sys v0.0.0-20190124100055-b90733256f2e // indirect
 )

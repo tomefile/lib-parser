@@ -1,6 +1,6 @@
 echo 1
 
 :section "Hello World!" {
-	echo '1.1'
+	echo `1.1`
 	echo 1.2
 }

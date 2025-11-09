@@ -4,114 +4,73 @@ import (
 	"bufio"
 	"io"
 	"strings"
+	"unicode"
 
 	"github.com/tomefile/lib-parser/internal"
 )
 
 type Parser struct {
-	Reader  *internal.AdvancedReader
-	Channel chan *Node
-
-	breadcrumbs []*Node
+	Name            string
+	reader          *internal.SourceCodeReader
+	root            *NodeTree
+	endOfSectionErr *ParsingError
 }
 
-func New(reader *bufio.Reader, consumer chan *Node) *Parser {
+func New(name string, reader *bufio.Reader) *Parser {
 	return &Parser{
-		Reader:      internal.NewReader(reader),
-		Channel:     consumer,
-		breadcrumbs: []*Node{},
+		Name:   name,
+		reader: internal.NewSourceCodeReader(reader),
+		root: &NodeTree{
+			Tomes:        map[string]Node{},
+			NodeChildren: NodeChildren{},
+		},
 	}
 }
 
-// Nodes are returned as soon as they are read (fast).
-// Sets [Node.Parent].
-// [Node.Children] is always nil
-func (parser *Parser) ParseFragmented() {
-	defer close(parser.Channel)
+func (parser *Parser) Parse() (*NodeTree, *ParsingError) {
+	parser.endOfSectionErr = parser.failSyntax("unexpected '}' with no matching '{' pair")
 
 	for {
-		node := parser.next()
-		if node == nil { // EOF
-			return
-		}
-
-		if node == Null {
-			continue
-		}
-
-		parser.Channel <- node
-		if node.IsError() {
-			return
+		err := parser.next(&parser.root.NodeChildren)
+		if err != nil {
+			if err == EOF {
+				break
+			}
+			return parser.root, err
 		}
 	}
+	return parser.root, nil
 }
 
-// Nodes are returned only once all of their children are read (slow).
-// Sets [Node.Children] if applicable.
-// [Node.Parent] is always nil to prevent pointer recursion
-func (parser *Parser) ParseComplete() {
-	defer close(parser.Channel)
+func (parser *Parser) next(parent *NodeChildren) *ParsingError {
+	parser.reader.ContextReset()
 
-	var buffered *Node
-
-	for {
-		node := parser.next()
-		if node == nil { // EOF
-			if buffered != nil {
-				parser.Channel <- buffered
-			}
-			return
-		}
-
-		if node == Null {
-			continue
-		}
-
-		if node.IsError() {
-			if buffered != nil {
-				parser.Channel <- buffered
-			}
-			parser.Channel <- node
-			return
-		}
-
-		if node.Parent == nil {
-			if buffered != nil {
-				parser.Channel <- buffered
-			}
-			buffered = node
-		} else {
-			node.Parent.Children = append(node.Parent.Children, node)
-			node.Parent = nil
-		}
-	}
-}
-
-func (parser *Parser) next() *Node {
-	parser.Reader.RememberOffset()
-	parser.Reader.RememberPosition()
-
-	char, err := parser.Reader.Read()
+	char, err := parser.reader.Read()
 	if err != nil {
 		return parser.failReading(err)
 	}
 
+	if unicode.IsSpace(char) {
+		return nil
+	}
+
+	parser.reader.ContextBookmark()
 	switch char {
 
-	case '\n', ' ', '\t', '\v':
-		return Null
+	case '}':
+		return parser.endOfSectionErr
 
 	case '#':
-		parser.Reader.RememberPosition()
-		comment, err := parser.Reader.ReadWord(internal.DelimCharset('\n'))
+		comment, err := parser.reader.ReadWord(internal.DelimCharset('\n'))
 		if err != nil {
 			return parser.failReading(err)
 		}
-		return parser.makeComment(comment)
+		parser.reader.Inner.ReadRune() // Consume the \n character
+		*parent = append(*parent, &CommentNode{Contents: comment})
+		return nil
 
 	case ':':
-		parser.Reader.RememberPosition()
-		name, err := parser.Reader.ReadWord(internal.NameCharset)
+		name, err := parser.reader.ReadWord(internal.NameCharset)
 		if err != nil {
 			return parser.failReading(err)
 		}
@@ -119,76 +78,193 @@ func (parser *Parser) next() *Node {
 			return parser.failSyntax("missing a directive name after ':'")
 		}
 
-		parser.Reader.RememberPosition()
-		args, err := parser.Reader.ReadPosArgs(false)
-		if err != nil && err != io.EOF {
-			return parser.failReading(err)
-		}
-		args = parser.unfoldArgs(args)
-
-		parser.Reader.RememberPosition()
-		char, err := parser.Reader.Peek()
+		parser.reader.ContextBookmark()
+		args, err := parser.readArgs(false)
 		if err != nil && err != io.EOF {
 			return parser.failReading(err)
 		}
 
-		node := parser.makeDirective(name, args)
-
+		parser.reader.ContextBookmark()
+		children := NodeChildren{}
+		char, err := parser.reader.Peek()
+		if err != nil && err != io.EOF {
+			return parser.failReading(err)
+		}
 		if char == '{' {
-			parser.Reader.Read() // We Peek()-ed it earlier
-			parser.breadcrumbs = append(parser.breadcrumbs, node)
+			parser.reader.Read()
+			children, err = parser.readChildren()
+			if err != nil {
+				return parser.failReading(err)
+			}
 		}
-		return node
 
-	case '}':
-		if len(parser.breadcrumbs) == 0 {
-			return parser.failSyntax("unexpected '}' closing a non-existant section")
-		}
-		parser.parentNode().OffsetEnd = parser.Reader.CurrentOffset
-		parser.breadcrumbs = parser.breadcrumbs[:len(parser.breadcrumbs)-1]
-		return Null
+		*parent = append(*parent, &DirectiveNode{
+			Name:         name,
+			NodeArgs:     args,
+			NodeChildren: children,
+		})
+		return nil
 
 	default:
-		parser.Reader.RememberPosition()
-		name, err := parser.Reader.ReadWord(internal.NameCharset)
+		name, err := parser.reader.ReadWord(internal.NameCharset)
 		if err != nil {
 			return parser.failReading(err)
 		}
-		name = string(char) + name // We read it previously
+		name = string(char) + name // We read it earlier
 
-		parser.Reader.RememberPosition()
-		args, err := parser.Reader.ReadPosArgs(false)
+		parser.reader.ContextBookmark()
+		args, err := parser.readArgs(false)
 		if err != nil && err != io.EOF {
 			return parser.failReading(err)
 		}
-		args = parser.unfoldArgs(args)
 
-		if strings.HasSuffix(name, "!") {
-			name = strings.TrimSuffix(name, "!")
-			return parser.makeMacro(name, args)
-		}
-
-		return parser.makeExec(name, args)
-	}
-}
-
-func (parser *Parser) parentNode() *Node {
-	if len(parser.breadcrumbs) == 0 {
+		*parent = append(*parent, &ExecNode{
+			Binary:   name,
+			NodeArgs: args,
+		})
 		return nil
 	}
-	return parser.breadcrumbs[len(parser.breadcrumbs)-1]
 }
 
-func (parser *Parser) unfoldArgs(args []any) []any {
-	for i, arg := range args {
-		switch arg := arg.(type) {
-		case *internal.Subcommand:
-			if arg.IsMacro {
-				args[i] = parser.makeMacro(arg.Name, parser.unfoldArgs(arg.Args))
-			} else {
-				args[i] = parser.makeExec(arg.Name, parser.unfoldArgs(arg.Args))
+func (parser *Parser) appendArg(out NodeArgs, builder *strings.Builder) NodeArgs {
+	if builder.Len() != 0 {
+		out = append(out, &StringNode{Contents: builder.String()})
+		builder.Reset()
+	}
+	return out
+}
+
+func (parser *Parser) readArgs(is_nested bool) (NodeArgs, error) {
+	var builder strings.Builder
+	parentheses_depth := 0
+	expect_subcommand := false
+	is_escaped := false
+	out := NodeArgs{}
+
+	for {
+		char, err := parser.reader.Read()
+		if err != nil {
+			return out, err
+		}
+
+		if !is_escaped {
+			if char == '\n' {
+				out = parser.appendArg(out, &builder)
+				return out, nil
+			} else if unicode.IsSpace(char) {
+				out = parser.appendArg(out, &builder)
+				continue
+			}
+		} else {
+			if char == '\n' {
+				continue
+			} else if unicode.IsSpace(char) {
+				// NOTE: I'm not sure if this is doing anything useful
+				out = parser.appendArg(out, &builder)
+				continue
 			}
 		}
+
+		if expect_subcommand && char != '(' {
+			// It was infact not a subcommand
+			expect_subcommand = false
+			builder.WriteRune('$')
+		}
+
+		switch char {
+
+		case '$':
+			expect_subcommand = true
+
+		case '(':
+			parentheses_depth++
+			if expect_subcommand {
+				expect_subcommand = false
+				out = parser.appendArg(out, &builder)
+				subcommand, err := parser.readSubcommand()
+				if err != nil {
+					return nil, err
+				}
+				out = append(out, subcommand)
+			}
+			fallthrough
+
+		case ')':
+			parentheses_depth--
+			if is_nested && parentheses_depth <= 0 {
+				out = parser.appendArg(out, &builder)
+				return out, io.EOF
+			}
+
+		case '{':
+			parser.reader.Inner.UnreadRune()
+			return parser.appendArg(out, &builder), nil
+
+		case '\\':
+			is_escaped = true
+
+		case '"', '\'', '`':
+			contents, err := parser.reader.ReadInsideQuotes(char)
+			if err != nil {
+				return nil, err
+			}
+			if char == '`' {
+				out = append(out, &LiteralNode{Contents: contents})
+			} else {
+				out = append(out, &StringNode{Contents: contents})
+			}
+
+		case '<':
+			contents, err := parser.reader.ReadInsideQuotes('>')
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, &LiteralNode{Contents: "<" + contents + ">"})
+
+		default:
+			if is_escaped {
+				builder.WriteRune('\\')
+				is_escaped = false
+			}
+			builder.WriteRune(char)
+		}
+
 	}
-	return args
+}
+
+func (parser *Parser) readSubcommand() (Node, error) {
+	name, err := parser.reader.ReadWord(internal.NameCharset)
+	if err != nil {
+		return nil, err
+	}
+	if len(name) == 0 {
+		return &StringNode{Contents: "$("}, err
+	}
+
+	parser.reader.ContextBookmark()
+	args, err := parser.readArgs(true)
+	if err != nil && err != io.EOF {
+		return nil, err
+	}
+
+	return &ExecNode{
+		Binary:   name,
+		NodeArgs: args,
+	}, nil
+}
+
+func (parser *Parser) readChildren() (NodeChildren, error) {
+	out := NodeChildren{}
+
+	for {
+		err := parser.next(&out)
+		if err != nil {
+			if err == EOF || err == parser.endOfSectionErr {
+				break
+			}
+			return out, err
+		}
+	}
+
+	return out, nil
 }
