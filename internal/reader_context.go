@@ -33,7 +33,7 @@ func (reader *SourceCodeReader) PrintContext(writer io.Writer) {
 	writer.Write([]byte(libescapes.TextColorBrightRed))
 
 	if reader.buffer.Len() == 0 {
-		writer.Write([]byte("<empty string>"))
+		writer.Write([]byte("←—"))
 	} else {
 		i = 0
 		buffer := strings.TrimSuffix(reader.buffer.String(), "\n")
