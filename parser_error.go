@@ -3,7 +3,6 @@ package libparser
 import (
 	"fmt"
 	"io"
-	"strings"
 
 	libescapes "github.com/bbfh-dev/lib-ansi-escapes"
 )
@@ -45,12 +44,6 @@ func (err *ParsingError) BeautyPrint(writer io.Writer) {
 	)
 }
 
-func (parser *Parser) getErrorContext() string {
-	var builder strings.Builder
-	parser.reader.PrintContext(&builder)
-	return builder.String()
-}
-
 func (parser *Parser) fail(name, details string) *ParsingError {
 	return &ParsingError{
 		Name:    name,
@@ -58,7 +51,7 @@ func (parser *Parser) fail(name, details string) *ParsingError {
 		File:    parser.Name,
 		Col:     parser.reader.PrevCol,
 		Row:     parser.reader.PrevRow,
-		Context: parser.getErrorContext(),
+		Context: parser.reader.GetPrintedContext(),
 	}
 }
 

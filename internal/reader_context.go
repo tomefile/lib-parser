@@ -50,3 +50,9 @@ func (reader *SourceCodeReader) PrintContext(writer io.Writer) {
 
 	writer.Write([]byte(libescapes.ColorReset))
 }
+
+func (reader *SourceCodeReader) GetPrintedContext() string {
+	var builder strings.Builder
+	reader.PrintContext(&builder)
+	return builder.String()
+}
