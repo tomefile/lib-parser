@@ -26,6 +26,7 @@ func New(name string, reader *bufio.Reader) *Parser {
 			Tomes:        map[string]Node{},
 			NodeChildren: NodeChildren{},
 		},
+		endOfSectionErr: nil,
 	}
 }
 
