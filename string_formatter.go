@@ -28,9 +28,7 @@ func (formatter *StringFormatter) fail(err error) *DetailedError {
 	return &DetailedError{
 		Name:    ERROR_FORMATTING,
 		Details: err.Error(),
-		File:    "<stream>",
-		Col:     formatter.reader.PrevCol,
-		Row:     formatter.reader.PrevRow,
+		Trace:   []TraceItem{},
 		Context: formatter.reader.GetPrintedContext(),
 	}
 }

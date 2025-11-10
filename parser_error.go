@@ -17,13 +17,17 @@ const (
 
 var EOF = &DetailedError{Name: "EOF"}
 
+type TraceItem struct {
+	Name     string
+	Col, Row uint
+}
+
 type DetailedError struct {
 	Name    string
 	Details string
 
-	File     string
-	Col, Row uint
-	Context  string
+	Trace   []TraceItem
+	Context string
 }
 
 func (err *DetailedError) Error() string {
@@ -31,14 +35,31 @@ func (err *DetailedError) Error() string {
 }
 
 func (err *DetailedError) BeautyPrint(writer io.Writer) {
-	// TODO: Add trace
+	fmt.Fprintf(writer, "[!] %s\n", err.Name)
+
+	if len(err.Trace) > 0 {
+		fmt.Fprintf(
+			writer,
+			"    in %s:%d:%d\n",
+			err.Trace[0].Name,
+			err.Trace[0].Row,
+			err.Trace[0].Col,
+		)
+
+		for _, item := range err.Trace[1:] {
+			fmt.Fprintf(
+				writer,
+				"    └─ from %s:%d:%d\n",
+				item.Name,
+				item.Row,
+				item.Col,
+			)
+		}
+	}
+
 	fmt.Fprintf(
 		writer,
-		"[!] %s\n    in %s:%d:%d\n\n%s\n\n[?] Details\n    %s%s%s",
-		err.Name,
-		err.File,
-		err.Row,
-		err.Col,
+		"\n%s\n\n[?] Details\n    %s%s%s",
 		err.Context,
 		libescapes.TextColorBrightRed,
 		err.Details,
@@ -53,12 +74,18 @@ func (err *DetailedError) GetBeautyPrinted() string {
 }
 
 func (parser *Parser) fail(name, details string) *DetailedError {
+	trace := []TraceItem{
+		{
+			Name: parser.Name,
+			Col:  parser.reader.PrevCol,
+			Row:  parser.reader.PrevRow,
+		},
+	}
+
 	return &DetailedError{
 		Name:    name,
 		Details: details,
-		File:    parser.Name,
-		Col:     parser.reader.PrevCol,
-		Row:     parser.reader.PrevRow,
+		Trace:   trace,
 		Context: parser.reader.GetPrintedContext(),
 	}
 }
