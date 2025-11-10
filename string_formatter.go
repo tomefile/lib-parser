@@ -24,8 +24,8 @@ func NewStringFormatter(reader *bufio.Reader) *StringFormatter {
 	}
 }
 
-func (formatter *StringFormatter) fail(err error) *ParsingError {
-	return &ParsingError{
+func (formatter *StringFormatter) fail(err error) *DetailedError {
+	return &DetailedError{
 		Name:    ERROR_FORMATTING,
 		Details: err.Error(),
 		File:    "<stream>",
@@ -35,7 +35,7 @@ func (formatter *StringFormatter) fail(err error) *ParsingError {
 	}
 }
 
-func (formatter *StringFormatter) Format() ([]Segment, *ParsingError) {
+func (formatter *StringFormatter) Format() ([]Segment, *DetailedError) {
 	formatter.reader.ContextReset()
 
 	for {

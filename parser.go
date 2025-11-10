@@ -13,7 +13,7 @@ type Parser struct {
 	Name            string
 	reader          *internal.SourceCodeReader
 	root            *NodeTree
-	endOfSectionErr *ParsingError
+	endOfSectionErr *DetailedError
 }
 
 func New(name string, reader *bufio.Reader) *Parser {
@@ -27,7 +27,7 @@ func New(name string, reader *bufio.Reader) *Parser {
 	}
 }
 
-func (parser *Parser) Parse() (*NodeTree, *ParsingError) {
+func (parser *Parser) Parse() (*NodeTree, *DetailedError) {
 	parser.endOfSectionErr = parser.failSyntax("unexpected '}' with no matching '{' pair")
 
 	for {
@@ -42,7 +42,7 @@ func (parser *Parser) Parse() (*NodeTree, *ParsingError) {
 	return parser.root, nil
 }
 
-func (parser *Parser) next(parent *NodeChildren) *ParsingError {
+func (parser *Parser) next(parent *NodeChildren) *DetailedError {
 	parser.reader.ContextReset()
 
 	char, err := parser.reader.Read()

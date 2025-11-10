@@ -15,9 +15,9 @@ const (
 	ERROR_FORMATTING = "Formatting Error"
 )
 
-var EOF = &ParsingError{Name: "EOF"}
+var EOF = &DetailedError{Name: "EOF"}
 
-type ParsingError struct {
+type DetailedError struct {
 	Name    string
 	Details string
 
@@ -26,11 +26,11 @@ type ParsingError struct {
 	Context  string
 }
 
-func (err *ParsingError) Error() string {
+func (err *DetailedError) Error() string {
 	return fmt.Sprintf("(%s) %s", err.Name, err.Details)
 }
 
-func (err *ParsingError) BeautyPrint(writer io.Writer) {
+func (err *DetailedError) BeautyPrint(writer io.Writer) {
 	// TODO: Add trace
 	fmt.Fprintf(
 		writer,
@@ -46,14 +46,14 @@ func (err *ParsingError) BeautyPrint(writer io.Writer) {
 	)
 }
 
-func (err *ParsingError) GetBeautyPrinted() string {
+func (err *DetailedError) GetBeautyPrinted() string {
 	var builder strings.Builder
 	err.BeautyPrint(&builder)
 	return builder.String()
 }
 
-func (parser *Parser) fail(name, details string) *ParsingError {
-	return &ParsingError{
+func (parser *Parser) fail(name, details string) *DetailedError {
+	return &DetailedError{
 		Name:    name,
 		Details: details,
 		File:    parser.Name,
@@ -63,7 +63,7 @@ func (parser *Parser) fail(name, details string) *ParsingError {
 	}
 }
 
-func (parser *Parser) failReading(err error) *ParsingError {
+func (parser *Parser) failReading(err error) *DetailedError {
 	if err == io.EOF {
 		return EOF
 	}
@@ -71,6 +71,6 @@ func (parser *Parser) failReading(err error) *ParsingError {
 	return parser.fail(ERROR_READING, err.Error())
 }
 
-func (parser *Parser) failSyntax(format string, args ...any) *ParsingError {
+func (parser *Parser) failSyntax(format string, args ...any) *DetailedError {
 	return parser.fail(ERROR_SYNTAX, fmt.Sprintf(format, args...))
 }
