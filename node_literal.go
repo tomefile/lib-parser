@@ -10,3 +10,7 @@ type LiteralNode struct {
 func (node *LiteralNode) Node() string {
 	return fmt.Sprintf("[literal %q]", node.Contents)
 }
+
+func (node *LiteralNode) Eval(_ Locals) (string, error) {
+	return node.Contents, nil
+}

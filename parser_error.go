@@ -8,9 +8,10 @@ import (
 )
 
 const (
-	ERROR_READING  = "Reading Error"
-	ERROR_SYNTAX   = "Syntax Error"
-	ERROR_INTERNAL = "Internal Error"
+	ERROR_READING    = "Reading Error"
+	ERROR_SYNTAX     = "Syntax Error"
+	ERROR_INTERNAL   = "Internal Error"
+	ERROR_FORMATTING = "Formatting Error"
 )
 
 var EOF = &ParsingError{Name: "EOF"}
