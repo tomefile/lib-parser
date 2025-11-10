@@ -24,7 +24,7 @@ parser := libparser.New(
     "example.tome",
     bufio.NewReader(file),
     libparser.PostNoShebang,  // remove UNIX shebang, e.g. #!/bin/tome
-    libparser.PostExclude[*libparser.DirectiveNode],
+    libparser.PostExclude[*libparser.DirectiveNode], // let's say we want to exclude a specific node type
 )
 tree, err := parser.Parse()
 if err != nil {
