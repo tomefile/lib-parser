@@ -3,6 +3,7 @@ package libparser
 import (
 	"fmt"
 	"io"
+	"strings"
 
 	libescapes "github.com/bbfh-dev/lib-ansi-escapes"
 )
@@ -43,6 +44,12 @@ func (err *ParsingError) BeautyPrint(writer io.Writer) {
 		err.Details,
 		libescapes.ColorReset,
 	)
+}
+
+func (err *ParsingError) GetBeautyPrinted() string {
+	var builder strings.Builder
+	err.BeautyPrint(&builder)
+	return builder.String()
 }
 
 func (parser *Parser) fail(name, details string) *ParsingError {

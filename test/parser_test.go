@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	libparser "github.com/tomefile/lib-parser"
@@ -26,9 +25,7 @@ func TestAll(test *testing.T) {
 			parser := libparser.New(file.Name(), bufio.NewReader(file))
 			tree, parser_err := parser.Parse()
 			if parser_err != nil {
-				var builder strings.Builder
-				parser_err.BeautyPrint(&builder)
-				fmt.Println(builder.String())
+				fmt.Println(parser_err.GetBeautyPrinted())
 				test.FailNow()
 			}
 
