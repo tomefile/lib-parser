@@ -20,7 +20,12 @@ Library to parse [Tomefile](https://github.com/tomefile) code and output a node 
 Parsing a file:
 
 ```go
-parser := libparser.New("example.tome", bufio.NewReader(file))
+parser := libparser.New(
+    "example.tome",
+    bufio.NewReader(file),
+    libparser.PostNoShebang,  // remove UNIX shebang, e.g. #!/bin/tome
+    libparser.PostExclude[*libparser.DirectiveNode],
+)
 tree, err := parser.Parse()
 if err != nil {
     err.BeautyPrint(os.Stderr)
