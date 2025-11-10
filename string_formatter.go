@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"unicode"
 
 	"github.com/tomefile/lib-parser/internal"
 )
@@ -50,6 +51,14 @@ func (formatter *StringFormatter) Format() ([]Segment, *ParsingError) {
 		switch char {
 
 		case '$':
+			peer_char, peek_err := formatter.reader.Peek()
+			if peek_err != nil {
+				return formatter.out, formatter.fail(err)
+			}
+			if unicode.IsSpace(rune(peer_char)) {
+				formatter.builder.WriteRune(char)
+				break
+			}
 			formatter.reader.ContextBookmark()
 			formatter.writeBuffer()
 			segment, err := formatter.parseVariable()

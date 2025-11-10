@@ -78,6 +78,17 @@ var FormatterTestCases = []FormatterTestCase{
 			},
 		},
 	},
+	{
+		Input: "stay $ unmodified ${}",
+		Output: []libparser.Segment{
+			&libparser.LiteralNode{
+				Contents: "stay $ unmodified ",
+			},
+			&libparser.LiteralNode{
+				Contents: "${}",
+			},
+		},
+	},
 }
 
 func TestFormatter(test *testing.T) {
