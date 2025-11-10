@@ -9,8 +9,6 @@ import (
 	"github.com/tomefile/lib-parser/internal"
 )
 
-type PostProcessor func(Node) (Node, *DetailedError)
-
 type Parser struct {
 	parent          *Parser
 	Name            string

@@ -22,7 +22,7 @@ func TestAll(test *testing.T) {
 		defer file.Close()
 
 		test.Run(file.Name(), func(test *testing.T) {
-			parser := libparser.New(file.Name(), bufio.NewReader(file))
+			parser := libparser.New(file.Name(), bufio.NewReader(file), libparser.PostNoShebang)
 			tree, parser_err := parser.Parse()
 			if parser_err != nil {
 				fmt.Println(parser_err.GetBeautyPrinted())
@@ -48,6 +48,7 @@ func TestPostProcessor(test *testing.T) {
 	parser := libparser.New(
 		file.Name(),
 		bufio.NewReader(file),
+		libparser.PostNoShebang,
 		func(node libparser.Node) (libparser.Node, *libparser.DetailedError) {
 			switch node := node.(type) {
 			case *libparser.CommentNode:
@@ -55,14 +56,8 @@ func TestPostProcessor(test *testing.T) {
 			}
 			return node, nil
 		},
-		func(node libparser.Node) (libparser.Node, *libparser.DetailedError) {
-			switch node.(type) {
-			case *libparser.ExecNode, *libparser.DirectiveNode:
-				// discard
-				return nil, nil
-			}
-			return node, nil
-		},
+		libparser.PostExclude[*libparser.ExecNode],
+		libparser.PostExclude[*libparser.DirectiveNode],
 	)
 	tree, parser_err := parser.Parse()
 	if parser_err != nil {
