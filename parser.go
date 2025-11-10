@@ -51,7 +51,7 @@ func (parser *Parser) Parse() (*NodeTree, *DetailedError) {
 	return parser.root, nil
 }
 
-func (parser *Parser) next(parent *NodeChildren) *DetailedError {
+func (parser *Parser) next(container *NodeChildren) *DetailedError {
 	parser.reader.ContextReset()
 
 	char, err := parser.reader.Read()
@@ -75,7 +75,7 @@ func (parser *Parser) next(parent *NodeChildren) *DetailedError {
 			return parser.failReading(err)
 		}
 		parser.reader.Inner.ReadRune() // Consume the \n character
-		*parent = append(*parent, &CommentNode{Contents: comment})
+		*container = append(*container, &CommentNode{Contents: comment})
 		return nil
 
 	case ':':
@@ -107,7 +107,7 @@ func (parser *Parser) next(parent *NodeChildren) *DetailedError {
 			}
 		}
 
-		*parent = append(*parent, &DirectiveNode{
+		*container = append(*container, &DirectiveNode{
 			Name:         name,
 			NodeArgs:     args,
 			NodeChildren: children,
@@ -127,7 +127,7 @@ func (parser *Parser) next(parent *NodeChildren) *DetailedError {
 			return parser.failReading(err)
 		}
 
-		*parent = append(*parent, &ExecNode{
+		*container = append(*container, &ExecNode{
 			Binary:   name,
 			NodeArgs: args,
 		})
