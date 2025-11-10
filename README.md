@@ -2,6 +2,19 @@
 
 Library to parse [Tomefile](https://github.com/tomefile) code and output a node tree for use by another program.
 
+<!-- vim-markdown-toc GFM -->
+
+* [Features](#features)
+* [Usage](#usage)
+
+<!-- vim-markdown-toc -->
+
+## Features
+
+- **Parsing** `libparser.Parse(...)` — Parses the input UTF-8 stream into a node tree
+- **Formatting** `libparser.Format(...)` — Formats the input UTF-8 stream returning a slice of segments. Used to substitute environmental, local, and such variables.
+- **Post-Processing** `func(Node) (Node, *DetailedError)` — Inject functions into `libparser.Parse(...)` to be applied to a node before it gets appended to the tree. Returns as soon as an error is encountered. Used to validate, discard or modify nodes.
+
 ## Usage
 
 Parsing a file:
