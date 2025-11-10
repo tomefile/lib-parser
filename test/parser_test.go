@@ -55,6 +55,14 @@ func TestPostProcessor(test *testing.T) {
 			}
 			return node, nil
 		},
+		func(node libparser.Node) (libparser.Node, *libparser.DetailedError) {
+			switch node.(type) {
+			case *libparser.ExecNode, *libparser.DirectiveNode:
+				// discard
+				return nil, nil
+			}
+			return node, nil
+		},
 	)
 	tree, parser_err := parser.Parse()
 	if parser_err != nil {
@@ -62,7 +70,9 @@ func TestPostProcessor(test *testing.T) {
 		test.FailNow()
 	}
 
-	assert.DeepEqual(test, tree.NodeChildren[0], &libparser.CommentNode{
-		Contents: message,
+	assert.DeepEqual(test, tree.NodeChildren, libparser.NodeChildren{
+		&libparser.CommentNode{
+			Contents: message,
+		},
 	})
 }

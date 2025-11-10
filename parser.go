@@ -65,6 +65,10 @@ func (parser *Parser) writeNode(container *NodeChildren, node Node) (err *Detail
 		if err != nil {
 			return err
 		}
+		if node == nil {
+			// Node was discarded
+			return nil
+		}
 	}
 
 	*container = append(*container, node)
