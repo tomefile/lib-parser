@@ -73,14 +73,20 @@ func (err *DetailedError) GetBeautyPrinted() string {
 	return builder.String()
 }
 
-func (parser *Parser) fail(name, details string) *DetailedError {
-	trace := []TraceItem{
-		{
-			Name: parser.Name,
-			Col:  parser.reader.PrevCol,
-			Row:  parser.reader.PrevRow,
-		},
+func (parser *Parser) fillTrace(out *[]TraceItem) {
+	*out = append(*out, TraceItem{
+		Name: parser.Name,
+		Col:  parser.reader.PrevCol,
+		Row:  parser.reader.PrevRow,
+	})
+	if parser.parent != nil {
+		parser.parent.fillTrace(out)
 	}
+}
+
+func (parser *Parser) fail(name, details string) *DetailedError {
+	trace := []TraceItem{}
+	parser.fillTrace(&trace)
 
 	return &DetailedError{
 		Name:    name,

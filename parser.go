@@ -10,6 +10,7 @@ import (
 )
 
 type Parser struct {
+	parent          *Parser
 	Name            string
 	reader          *internal.SourceCodeReader
 	root            *NodeTree
@@ -18,6 +19,7 @@ type Parser struct {
 
 func New(name string, reader *bufio.Reader) *Parser {
 	return &Parser{
+		parent: nil,
 		Name:   name,
 		reader: internal.NewSourceCodeReader(reader),
 		root: &NodeTree{
@@ -25,6 +27,12 @@ func New(name string, reader *bufio.Reader) *Parser {
 			NodeChildren: NodeChildren{},
 		},
 	}
+}
+
+func (parser *Parser) NewNested(name string, reader *bufio.Reader) *Parser {
+	nested := New(name, reader)
+	nested.parent = parser
+	return nested
 }
 
 func (parser *Parser) Parse() (*NodeTree, *DetailedError) {
