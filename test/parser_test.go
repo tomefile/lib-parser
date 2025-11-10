@@ -33,3 +33,36 @@ func TestAll(test *testing.T) {
 		})
 	}
 }
+
+func TestPostProcessor(test *testing.T) {
+	message := "this is a result of post processing!"
+
+	file, err := os.OpenFile(
+		filepath.Join("data", "01_basic.tome"),
+		os.O_RDONLY,
+		os.ModePerm,
+	)
+	assert.NilError(test, err)
+	defer file.Close()
+
+	parser := libparser.New(
+		file.Name(),
+		bufio.NewReader(file),
+		func(node libparser.Node) (libparser.Node, *libparser.DetailedError) {
+			switch node := node.(type) {
+			case *libparser.CommentNode:
+				node.Contents = message
+			}
+			return node, nil
+		},
+	)
+	tree, parser_err := parser.Parse()
+	if parser_err != nil {
+		fmt.Println(parser_err.GetBeautyPrinted())
+		test.FailNow()
+	}
+
+	assert.DeepEqual(test, tree.NodeChildren[0], &libparser.CommentNode{
+		Contents: message,
+	})
+}

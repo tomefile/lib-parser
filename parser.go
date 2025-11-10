@@ -9,15 +9,18 @@ import (
 	"github.com/tomefile/lib-parser/internal"
 )
 
+type PostProcessor func(Node) (Node, *DetailedError)
+
 type Parser struct {
 	parent          *Parser
 	Name            string
 	reader          *internal.SourceCodeReader
 	root            *NodeTree
 	endOfSectionErr *DetailedError
+	postProcessors  []PostProcessor
 }
 
-func New(name string, reader *bufio.Reader) *Parser {
+func New(name string, reader *bufio.Reader, processors ...PostProcessor) *Parser {
 	return &Parser{
 		parent: nil,
 		Name:   name,
@@ -27,11 +30,16 @@ func New(name string, reader *bufio.Reader) *Parser {
 			NodeChildren: NodeChildren{},
 		},
 		endOfSectionErr: nil,
+		postProcessors:  processors,
 	}
 }
 
-func (parser *Parser) NewNested(name string, reader *bufio.Reader) *Parser {
-	nested := New(name, reader)
+func (parser *Parser) NewNested(
+	name string,
+	reader *bufio.Reader,
+	processors ...PostProcessor,
+) *Parser {
+	nested := New(name, reader, processors...)
 	nested.parent = parser
 	return nested
 }
@@ -49,6 +57,18 @@ func (parser *Parser) Parse() (*NodeTree, *DetailedError) {
 		}
 	}
 	return parser.root, nil
+}
+
+func (parser *Parser) writeNode(container *NodeChildren, node Node) (err *DetailedError) {
+	for _, processor := range parser.postProcessors {
+		node, err = processor(node)
+		if err != nil {
+			return err
+		}
+	}
+
+	*container = append(*container, node)
+	return nil
 }
 
 func (parser *Parser) next(container *NodeChildren) *DetailedError {
@@ -75,8 +95,7 @@ func (parser *Parser) next(container *NodeChildren) *DetailedError {
 			return parser.failReading(err)
 		}
 		parser.reader.Inner.ReadRune() // Consume the \n character
-		*container = append(*container, &CommentNode{Contents: comment})
-		return nil
+		return parser.writeNode(container, &CommentNode{Contents: comment})
 
 	case ':':
 		name, err := parser.reader.ReadWord(internal.NameCharset)
@@ -107,12 +126,11 @@ func (parser *Parser) next(container *NodeChildren) *DetailedError {
 			}
 		}
 
-		*container = append(*container, &DirectiveNode{
+		return parser.writeNode(container, &DirectiveNode{
 			Name:         name,
 			NodeArgs:     args,
 			NodeChildren: children,
 		})
-		return nil
 
 	default:
 		name, err := parser.reader.ReadWord(internal.NameCharset)
@@ -127,11 +145,10 @@ func (parser *Parser) next(container *NodeChildren) *DetailedError {
 			return parser.failReading(err)
 		}
 
-		*container = append(*container, &ExecNode{
+		return parser.writeNode(container, &ExecNode{
 			Binary:   name,
 			NodeArgs: args,
 		})
-		return nil
 	}
 }
 
