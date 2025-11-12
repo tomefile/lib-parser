@@ -15,7 +15,7 @@ type Parser struct {
 	reader          *internal.SourceCodeReader
 	root            *NodeTree
 	endOfSectionErr *DetailedError
-	postProcessors  []PostProcessor
+	PostProcessors  []PostProcessor
 }
 
 func New(name string, reader *bufio.Reader, processors ...PostProcessor) *Parser {
@@ -28,7 +28,7 @@ func New(name string, reader *bufio.Reader, processors ...PostProcessor) *Parser
 			NodeChildren: NodeChildren{},
 		},
 		endOfSectionErr: nil,
-		postProcessors:  processors,
+		PostProcessors:  processors,
 	}
 }
 
@@ -54,7 +54,7 @@ func (parser *Parser) Parse() (*NodeTree, *DetailedError) {
 }
 
 func (parser *Parser) writeNode(container *NodeChildren, node Node) (err *DetailedError) {
-	for _, processor := range parser.postProcessors {
+	for _, processor := range parser.PostProcessors {
 		node, err = processor(node)
 		if err != nil {
 			return err
