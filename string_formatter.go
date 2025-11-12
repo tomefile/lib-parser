@@ -16,9 +16,9 @@ type StringFormatter struct {
 	out     []Segment
 }
 
-func NewStringFormatter(reader *bufio.Reader) *StringFormatter {
+func NewStringFormatter(input string) *StringFormatter {
 	return &StringFormatter{
-		reader:  internal.NewSourceCodeReader(reader),
+		reader:  internal.NewSourceCodeReader(bufio.NewReader(strings.NewReader(input))),
 		builder: strings.Builder{},
 		out:     []Segment{},
 	}

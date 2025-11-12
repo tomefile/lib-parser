@@ -1,7 +1,6 @@
 package libparser_test
 
 import (
-	"bufio"
 	"fmt"
 	"strings"
 	"testing"
@@ -98,9 +97,7 @@ func TestFormatter(test *testing.T) {
 		test.Run(
 			fmt.Sprintf("%02d_with_%d_characters", i, len(test_case.Input)),
 			func(test *testing.T) {
-				formatter := libparser.NewStringFormatter(
-					bufio.NewReader(strings.NewReader(test_case.Input)),
-				)
+				formatter := libparser.NewStringFormatter(test_case.Input)
 
 				parts, parser_err := formatter.Format()
 				if parser_err != nil {

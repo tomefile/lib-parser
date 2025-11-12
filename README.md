@@ -29,15 +29,19 @@ Library to parse [Tomefile](https://github.com/tomefile) code and output a node 
 Parsing a file:
 
 ```go
-parser := libparser.New(
+parser, err := libparser.OpenNew(
     "example.tome",
-    bufio.NewReader(file),
     libparser.PostNoShebang,  // remove UNIX shebang, e.g. #!/bin/tome
     libparser.PostExclude[*libparser.DirectiveNode], // let's say we want to exclude a specific node type
 )
-tree, err := parser.Parse()
 if err != nil {
-    err.BeautyPrint(os.Stderr)
+    panic(err) // File couldn't be opened for reading
+}
+defer parser.Close()
+
+tree, detailed_err := parser.Parse()
+if detailed_err != nil {
+    detailed_err.BeautyPrint(os.Stderr)
     os.Exit(1)
 }
 
@@ -47,15 +51,11 @@ if err != nil {
 Formatting a variable (i.e. `$name ${name:mod} etc.`)
 
 ```go
-formatter := libparser.NewStringFormatter(
-    bufio.NewReader(strings.NewReader(
-        "this is an example $string with ${string:trim_suffix 123}",
-    )),
-)
+formatter := libparser.NewStringFormatter("this is an example $string with ${string:trim_suffix 123}",)
 
-segments, err := formatter.Format()
-if err != nil {
-    err.BeautyPrint(os.Stderr)
+segments, detailed_err := formatter.Format()
+if detailed_err != nil {
+    detailed_err.BeautyPrint(os.Stderr)
     os.Exit(1)
 }
 
