@@ -20,7 +20,10 @@ func (segment *VariableSegment) Eval(locals Locals) (string, error) {
 		if segment.IsOptional {
 			return "", nil
 		}
-		return segment.Name, fmt.Errorf("variable %q is not defined in the current scope", value)
+		return segment.Name, fmt.Errorf(
+			"variable %q is not defined in the current scope",
+			segment.Name,
+		)
 	}
 
 	if segment.Modifier == nil {
