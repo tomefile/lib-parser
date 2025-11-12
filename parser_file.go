@@ -7,6 +7,7 @@ import (
 
 var OpenedFiles = []File{}
 
+// The parts of *os.File that parser cares about
 type File interface {
 	io.Reader
 	Name() string
