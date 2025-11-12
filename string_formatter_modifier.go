@@ -11,6 +11,10 @@ import (
 
 type StringModifier func(string) string
 
+func (modifier StringModifier) MarshalJSON() ([]byte, error) {
+	return []byte{'\x00'}, nil
+}
+
 func GetModifier(name string, args []string) StringModifier {
 	switch name {
 
