@@ -40,6 +40,7 @@ func (parser *Parser) With(processor PostProcessor) *Parser {
 	return parser
 }
 
+// Used for error tracing
 func (parser *Parser) SetParent(parent *Parser) *Parser {
 	parser.parent = parent
 	return parser
