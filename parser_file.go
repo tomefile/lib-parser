@@ -1,32 +1,34 @@
 package libparser
 
 import (
-	"bufio"
+	"io"
 	"os"
 )
 
-type CanClose interface {
+var OpenedFiles = []File{}
+
+type File interface {
+	io.Reader
+	Name() string
 	Close() error
 }
 
-var OpenedSources []CanClose
-
-func OpenNew(path string) (*Parser, error) {
+// Recommended way of opening files for parsing.
+//
+// Use `defer CloseAll()` in [main] to make sure no files are closed before parsing is finished.
+func OpenFile(path string) (*os.File, error) {
 	file, err := os.OpenFile(path, os.O_RDONLY, os.ModePerm)
 	if err != nil {
 		return nil, err
 	}
-	OpenedSources = append(OpenedSources, file)
 
-	return New(path, bufio.NewReader(file)), nil
+	OpenedFiles = append(OpenedFiles, file)
+	return file, nil
 }
 
-// Closes all files opened using [OpenNew()].
-//
-// Recommended to use `defer parser.Close()` in your main function.
-func (parser *Parser) Close() {
-	for _, file := range OpenedSources {
+func CloseAll() {
+	for _, file := range OpenedFiles {
 		file.Close()
 	}
-	OpenedSources = []CanClose{}
+	OpenedFiles = []File{}
 }

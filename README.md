@@ -33,14 +33,17 @@ Things that need to be done before `v1`:
 Parsing a file:
 
 ```go
-parser, err := libparser.OpenNew("example.tome")
-if err != nil {
-    panic(err) // File couldn't be opened for reading
-}
-defer parser.Close()
+// Close all files when all parsers have finished.
+defer libparser.CloseAll()
 
-parser.With(libparser.PostNoShebang)  // remove UNIX shebang, e.g. #!/bin/tome
-parser.With(libparser.PostExclude[*libparser.CommentNode])  // let's say we want to exclude a specific node type
+file, err := libparser.OpenFile("example.tome")
+if err != nil {
+    panic(err)
+}
+
+parser := libparser.New(file).
+    With(libparser.PostNoShebang).  // remove UNIX shebang, e.g. #!/bin/tome
+    With(libparser.PostExclude[*libparser.CommentNode])  // let's say we want to exclude a specific node type
 
 tree, detailed_err := parser.Parse()
 if detailed_err != nil {

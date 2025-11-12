@@ -18,11 +18,11 @@ type Parser struct {
 	PostProcessors  []PostProcessor
 }
 
-func New(name string, reader *bufio.Reader) *Parser {
+func New(file File) *Parser {
 	return &Parser{
 		parent: nil,
-		Name:   name,
-		reader: internal.NewSourceCodeReader(reader),
+		Name:   file.Name(),
+		reader: internal.NewSourceCodeReader(bufio.NewReader(file)),
 		root: &NodeTree{
 			Tomes:        map[string]Node{},
 			NodeChildren: NodeChildren{},
