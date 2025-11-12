@@ -32,14 +32,9 @@ func New(name string, reader *bufio.Reader, processors ...PostProcessor) *Parser
 	}
 }
 
-func (parser *Parser) NewNested(
-	name string,
-	reader *bufio.Reader,
-	processors ...PostProcessor,
-) *Parser {
-	nested := New(name, reader, processors...)
-	nested.parent = parser
-	return nested
+func (parser *Parser) SetParent(parent *Parser) *Parser {
+	parser.parent = parent
+	return parser
 }
 
 func (parser *Parser) Parse() (*NodeTree, *DetailedError) {
@@ -54,6 +49,7 @@ func (parser *Parser) Parse() (*NodeTree, *DetailedError) {
 			return parser.root, err
 		}
 	}
+
 	return parser.root, nil
 }
 
