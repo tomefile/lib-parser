@@ -26,6 +26,9 @@ func OpenFile(path string) (*os.File, error) {
 	return file, nil
 }
 
+// Close all [OpenedFiles].
+//
+// Recommended to be defered in [main], e.g. `defer libparser.CloseAll()`.
 func CloseAll() {
 	for _, file := range OpenedFiles {
 		file.Close()
