@@ -14,13 +14,12 @@ Library to parse [Tomefile](https://github.com/tomefile) code and output a node 
 
 - **Parsing** `libparser.Parse(...)` — Parses the input UTF-8 stream into a node tree
 - **Formatting** `libparser.Format(...)` — Formats the input UTF-8 stream returning a slice of segments. Used to substitute environmental, local, and such variables.
-- **Post-Processing** `func(Node) (Node, *DetailedError)` — Inject functions into `libparser.Parse(...)` to be applied to a node before it gets appended to the tree. Returns as soon as an error is encountered. Used to validate, discard or modify nodes.
+- **Post-Processing** `func(Node) (Node, *liberrors.DetailedError)` — Inject functions into `libparser.Parse(...)` to be applied to a node before it gets appended to the tree. Returns as soon as an error is encountered. Used to validate, discard or modify nodes.
 
 ## Roadmap
 
 Things that need to be done before `v1`:
 
-- [ ] Create a custom error library
 - [ ] Macros `example!`.
 - [ ] Support for `;` to separate statements.
 - [ ] Support `&&` and `||` in commands.
@@ -45,9 +44,9 @@ parser := libparser.New(file).
     With(libparser.PostNoShebang).  // remove UNIX shebang, e.g. #!/bin/tome
     With(libparser.PostExclude[*libparser.CommentNode])  // let's say we want to exclude a specific node type
 
-tree, detailed_err := parser.Parse()
-if detailed_err != nil {
-    detailed_err.BeautyPrint(os.Stderr)
+tree, derr := parser.Parse()
+if derr != nil {
+    derr.Print(os.Stderr)
     os.Exit(1)
 }
 
@@ -59,9 +58,9 @@ Formatting a variable (i.e. `$name ${name:mod} etc.`)
 ```go
 formatter := libparser.NewStringFormatter("this is an example $string with ${string:trim_suffix 123}",)
 
-segments, detailed_err := formatter.Format()
-if detailed_err != nil {
-    detailed_err.BeautyPrint(os.Stderr)
+segments, derr := formatter.Format()
+if derr != nil {
+    derr.Print(os.Stderr)
     os.Exit(1)
 }
 
