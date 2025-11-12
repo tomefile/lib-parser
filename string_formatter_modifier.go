@@ -1,6 +1,7 @@
 package libparser
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -12,7 +13,7 @@ import (
 type StringModifier func(string) string
 
 func (modifier StringModifier) MarshalJSON() ([]byte, error) {
-	return []byte{'\x00'}, nil
+	return json.Marshal("modifier()")
 }
 
 func GetModifier(name string, args []string) StringModifier {
