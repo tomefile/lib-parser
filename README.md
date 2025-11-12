@@ -20,7 +20,6 @@ Library to parse [Tomefile](https://github.com/tomefile) code and output a node 
 
 Things that need to be done before `v1`:
 
-- [ ] Macros `example!`.
 - [ ] Support for `;` to separate statements.
 - [ ] Support `&&` and `||` in commands.
 - [ ] Pipes `|`.

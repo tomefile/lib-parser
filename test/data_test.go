@@ -132,8 +132,8 @@ var ExpectedData = []DataTestCase{
 		Expect: &libparser.NodeTree{
 			Tomes: map[string]libparser.Node{},
 			NodeChildren: libparser.NodeChildren{
-				&libparser.ExecNode{
-					Binary: "echo",
+				&libparser.CallNode{
+					Macro: "my_macro",
 					NodeArgs: libparser.NodeArgs{
 						&libparser.StringNode{Contents: "123"},
 						&libparser.ExecNode{

@@ -1,1 +1,1 @@
-echo 123 $(readlink -p $MY_LINK) 456
+my_macro! 123 $(readlink -p $MY_LINK) 456

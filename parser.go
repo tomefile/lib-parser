@@ -153,6 +153,13 @@ func (parser *Parser) next(container *NodeChildren) *liberrors.DetailedError {
 			return parser.failReading(err)
 		}
 
+		if strings.HasSuffix(name, "!") {
+			return parser.writeNode(container, &CallNode{
+				Macro:    name[:len(name)-1],
+				NodeArgs: args,
+			})
+		}
+
 		return parser.writeNode(container, &ExecNode{
 			Binary:   name,
 			NodeArgs: args,
