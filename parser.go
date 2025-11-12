@@ -206,7 +206,7 @@ func (parser *Parser) readArgs(is_nested bool) (NodeArgs, error) {
 			}
 		}
 
-		if expect_subcommand && char != '(' {
+		if expect_subcommand && char != '(' && char != '{' {
 			// It was infact not a subcommand
 			expect_subcommand = false
 			builder.WriteRune('$')
@@ -238,8 +238,16 @@ func (parser *Parser) readArgs(is_nested bool) (NodeArgs, error) {
 			}
 
 		case '{':
-			parser.reader.Inner.UnreadRune()
-			return parser.appendArg(out, &builder), nil
+			if !expect_subcommand {
+				parser.reader.Inner.UnreadRune()
+				return parser.appendArg(out, &builder), nil
+			}
+			contents, err := parser.reader.ReadInsideQuotes('}')
+			if err != nil {
+				return nil, err
+			}
+			builder.WriteString("${" + contents + "}")
+			expect_subcommand = false
 
 		case '\\':
 			is_escaped = true
