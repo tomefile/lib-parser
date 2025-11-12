@@ -1,9 +1,10 @@
 module github.com/tomefile/lib-parser
 
-go 1.25.3
+go 1.25.4
 
 require (
 	github.com/iancoleman/strcase v0.3.0
+	github.com/tomefile/lib-errors v1.0.1
 	gotest.tools v2.2.0+incompatible
 )
 

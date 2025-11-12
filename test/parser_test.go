@@ -1,10 +1,10 @@
 package libparser_test
 
 import (
-	"fmt"
 	"path/filepath"
 	"testing"
 
+	liberrors "github.com/tomefile/lib-errors"
 	libparser "github.com/tomefile/lib-parser"
 	"gotest.tools/assert"
 )
@@ -21,9 +21,9 @@ func TestAll(test *testing.T) {
 
 			parser := libparser.New(file).With(libparser.PostNoShebang)
 
-			tree, parser_err := parser.Parse()
-			if parser_err != nil {
-				fmt.Println(parser_err.GetBeautyPrinted())
+			tree, derr := parser.Parse()
+			if derr != nil {
+				derr.Print(test.Output())
 				test.FailNow()
 			}
 
@@ -46,7 +46,7 @@ func TestPostProcessor(test *testing.T) {
 		With(libparser.PostExclude[*libparser.ExecNode]).
 		With(libparser.PostExclude[*libparser.DirectiveNode]).
 		With(
-			func(node libparser.Node) (libparser.Node, *libparser.DetailedError) {
+			func(node libparser.Node) (libparser.Node, *liberrors.DetailedError) {
 				switch node := node.(type) {
 				case *libparser.CommentNode:
 					node.Contents = message
@@ -55,9 +55,9 @@ func TestPostProcessor(test *testing.T) {
 			},
 		)
 
-	tree, parser_err := parser.Parse()
-	if parser_err != nil {
-		fmt.Println(parser_err.GetBeautyPrinted())
+	tree, derr := parser.Parse()
+	if derr != nil {
+		derr.Print(test.Output())
 		test.FailNow()
 	}
 

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"unicode"
 
+	liberrors "github.com/tomefile/lib-errors"
 	"github.com/tomefile/lib-parser/internal"
 )
 
@@ -24,16 +25,16 @@ func NewStringFormatter(input string) *StringFormatter {
 	}
 }
 
-func (formatter *StringFormatter) fail(err error) *DetailedError {
-	return &DetailedError{
-		Name:    ERROR_FORMATTING,
+func (formatter *StringFormatter) fail(err error) *liberrors.DetailedError {
+	return &liberrors.DetailedError{
+		Name:    liberrors.ERROR_FORMATTING,
 		Details: err.Error(),
-		Trace:   []TraceItem{},
-		Context: formatter.reader.GetPrintedContext(),
+		Trace:   []liberrors.TraceItem{},
+		Context: formatter.reader.ErrorContext(),
 	}
 }
 
-func (formatter *StringFormatter) Format() ([]Segment, *DetailedError) {
+func (formatter *StringFormatter) Format() ([]Segment, *liberrors.DetailedError) {
 	formatter.reader.ContextReset()
 
 	for {

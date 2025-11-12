@@ -6,6 +6,7 @@ import (
 	"strings"
 	"unicode"
 
+	liberrors "github.com/tomefile/lib-errors"
 	"github.com/tomefile/lib-parser/internal"
 )
 
@@ -14,7 +15,7 @@ type Parser struct {
 	Name            string
 	reader          *internal.SourceCodeReader
 	root            *NodeTree
-	endOfSectionErr *DetailedError
+	endOfSectionErr *liberrors.DetailedError
 	PostProcessors  []PostProcessor
 }
 
@@ -46,7 +47,7 @@ func (parser *Parser) SetParent(parent *Parser) *Parser {
 	return parser
 }
 
-func (parser *Parser) Parse() (*NodeTree, *DetailedError) {
+func (parser *Parser) Parse() (*NodeTree, *liberrors.DetailedError) {
 	parser.endOfSectionErr = parser.failSyntax("unexpected '}' with no matching '{' pair")
 
 	for {
@@ -62,7 +63,7 @@ func (parser *Parser) Parse() (*NodeTree, *DetailedError) {
 	return parser.root, nil
 }
 
-func (parser *Parser) writeNode(container *NodeChildren, node Node) (err *DetailedError) {
+func (parser *Parser) writeNode(container *NodeChildren, node Node) (err *liberrors.DetailedError) {
 	for _, processor := range parser.PostProcessors {
 		node, err = processor(node)
 		if err != nil {
@@ -78,7 +79,7 @@ func (parser *Parser) writeNode(container *NodeChildren, node Node) (err *Detail
 	return nil
 }
 
-func (parser *Parser) next(container *NodeChildren) *DetailedError {
+func (parser *Parser) next(container *NodeChildren) *liberrors.DetailedError {
 	parser.reader.ContextReset()
 
 	char, err := parser.reader.Read()

@@ -1,11 +1,15 @@
 package libparser
 
-import "strings"
+import (
+	"strings"
 
-type PostProcessor func(Node) (Node, *DetailedError)
+	liberrors "github.com/tomefile/lib-errors"
+)
+
+type PostProcessor func(Node) (Node, *liberrors.DetailedError)
 
 // Discards nodes of type [T] from the tree
-func PostExclude[T Node](node Node) (Node, *DetailedError) {
+func PostExclude[T Node](node Node) (Node, *liberrors.DetailedError) {
 	switch node.(type) {
 	case T:
 		return nil, nil
@@ -14,7 +18,7 @@ func PostExclude[T Node](node Node) (Node, *DetailedError) {
 }
 
 // Discards shebang (unix) comment
-func PostNoShebang(node Node) (Node, *DetailedError) {
+func PostNoShebang(node Node) (Node, *liberrors.DetailedError) {
 	switch node := node.(type) {
 	case *CommentNode:
 		if strings.HasPrefix(node.Contents, "!") {

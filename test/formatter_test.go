@@ -2,7 +2,6 @@ package libparser_test
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 
 	libparser "github.com/tomefile/lib-parser"
@@ -99,11 +98,9 @@ func TestFormatter(test *testing.T) {
 			func(test *testing.T) {
 				formatter := libparser.NewStringFormatter(test_case.Input)
 
-				parts, parser_err := formatter.Format()
-				if parser_err != nil {
-					var builder strings.Builder
-					parser_err.BeautyPrint(&builder)
-					fmt.Println(builder.String())
+				parts, derr := formatter.Format()
+				if derr != nil {
+					derr.Print(test.Output())
 					test.FailNow()
 				}
 

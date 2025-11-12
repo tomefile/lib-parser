@@ -1,11 +1,7 @@
 package internal
 
 import (
-	"fmt"
-	"io"
-	"strings"
-
-	libescapes "github.com/bbfh-dev/lib-ansi-escapes"
+	liberrors "github.com/tomefile/lib-errors"
 )
 
 func (reader *SourceCodeReader) ContextReset() {
@@ -18,41 +14,10 @@ func (reader *SourceCodeReader) ContextBookmark() {
 	reader.buffer.Reset()
 }
 
-func (reader *SourceCodeReader) PrintContext(writer io.Writer) {
-	writer.Write([]byte(libescapes.TextColorWhite))
-
-	var i uint
-	for line := range strings.SplitSeq(reader.context.String(), "\n") {
-		if i != 0 {
-			writer.Write([]byte{'\n'})
-		}
-		fmt.Fprintf(writer, "%5d |  %s", reader.PrevRow+i, line)
-		i++
+func (reader *SourceCodeReader) ErrorContext() liberrors.Context {
+	return liberrors.Context{
+		FirstLine:   reader.PrevRow,
+		Buffer:      reader.context.String(),
+		Highlighted: reader.buffer.String(),
 	}
-
-	writer.Write([]byte(libescapes.TextColorBrightRed))
-
-	if reader.buffer.Len() == 0 {
-		writer.Write([]byte("←—"))
-	} else {
-		i = 0
-		buffer := strings.TrimSuffix(reader.buffer.String(), "\n")
-		for line := range strings.SplitSeq(buffer, "\n") {
-			if i == 0 {
-				writer.Write([]byte(line))
-			} else {
-				fmt.Fprintf(writer, "\n%5d |  %s", reader.PrevRow+i, line)
-			}
-			i++
-		}
-
-	}
-
-	writer.Write([]byte(libescapes.ColorReset))
-}
-
-func (reader *SourceCodeReader) GetPrintedContext() string {
-	var builder strings.Builder
-	reader.PrintContext(&builder)
-	return builder.String()
 }
