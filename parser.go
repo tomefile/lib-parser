@@ -32,6 +32,9 @@ func New(file File) *Parser {
 	}
 }
 
+// Appends the [PostProcessor] to be applied to every single node before it gets appended to the tree.
+//
+// NOTE: Order matters (sequentially from first to last)
 func (parser *Parser) With(processor PostProcessor) *Parser {
 	parser.PostProcessors = append(parser.PostProcessors, processor)
 	return parser
