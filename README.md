@@ -18,26 +18,29 @@ Library to parse [Tomefile](https://github.com/tomefile) code and output a node 
 
 ## Roadmap
 
+Things that need to be done before `v1`:
+
+- [ ] Create a custom error library
 - [ ] Macros `example!`.
 - [ ] Support for `;` to separate statements.
 - [ ] Support `&&` and `||` in commands.
 - [ ] Pipes `|`.
 - [ ] Redirects `>` & `<`.
+- [ ] Better test coverage
 
 ## Usage
 
 Parsing a file:
 
 ```go
-parser, err := libparser.OpenNew(
-    "example.tome",
-    libparser.PostNoShebang,  // remove UNIX shebang, e.g. #!/bin/tome
-    libparser.PostExclude[*libparser.DirectiveNode], // let's say we want to exclude a specific node type
-)
+parser, err := libparser.OpenNew("example.tome")
 if err != nil {
     panic(err) // File couldn't be opened for reading
 }
 defer parser.Close()
+
+parser.With(libparser.PostNoShebang)  // remove UNIX shebang, e.g. #!/bin/tome
+parser.With(libparser.PostExclude[*libparser.CommentNode])  // let's say we want to exclude a specific node type
 
 tree, detailed_err := parser.Parse()
 if detailed_err != nil {

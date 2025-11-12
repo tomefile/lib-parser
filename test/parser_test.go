@@ -14,9 +14,11 @@ func TestAll(test *testing.T) {
 		path := filepath.Join("data", test_case.Filename)
 
 		test.Run(test_case.Filename, func(test *testing.T) {
-			parser, err := libparser.OpenNew(path, libparser.PostNoShebang)
+			parser, err := libparser.OpenNew(path)
 			assert.NilError(test, err)
 			defer parser.Close()
+
+			parser.With(libparser.PostNoShebang)
 
 			tree, parser_err := parser.Parse()
 			if parser_err != nil {
@@ -34,9 +36,12 @@ func TestPostProcessor(test *testing.T) {
 
 	path := filepath.Join("data", "01_basic.tome")
 
-	parser, err := libparser.OpenNew(
-		path,
-		libparser.PostNoShebang,
+	parser, err := libparser.OpenNew(path)
+	assert.NilError(test, err)
+	defer parser.Close()
+
+	parser.With(libparser.PostNoShebang)
+	parser.With(
 		func(node libparser.Node) (libparser.Node, *libparser.DetailedError) {
 			switch node := node.(type) {
 			case *libparser.CommentNode:
@@ -44,11 +49,9 @@ func TestPostProcessor(test *testing.T) {
 			}
 			return node, nil
 		},
-		libparser.PostExclude[*libparser.ExecNode],
-		libparser.PostExclude[*libparser.DirectiveNode],
 	)
-	assert.NilError(test, err)
-	defer parser.Close()
+	parser.With(libparser.PostExclude[*libparser.ExecNode])
+	parser.With(libparser.PostExclude[*libparser.DirectiveNode])
 
 	tree, parser_err := parser.Parse()
 	if parser_err != nil {

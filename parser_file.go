@@ -11,14 +11,14 @@ type CanClose interface {
 
 var OpenedSources []CanClose
 
-func OpenNew(path string, processors ...PostProcessor) (*Parser, error) {
+func OpenNew(path string) (*Parser, error) {
 	file, err := os.OpenFile(path, os.O_RDONLY, os.ModePerm)
 	if err != nil {
 		return nil, err
 	}
 	OpenedSources = append(OpenedSources, file)
 
-	return New(path, bufio.NewReader(file), processors...), nil
+	return New(path, bufio.NewReader(file)), nil
 }
 
 // Closes all files opened using [OpenNew()].

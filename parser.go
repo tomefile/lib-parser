@@ -18,7 +18,7 @@ type Parser struct {
 	PostProcessors  []PostProcessor
 }
 
-func New(name string, reader *bufio.Reader, processors ...PostProcessor) *Parser {
+func New(name string, reader *bufio.Reader) *Parser {
 	return &Parser{
 		parent: nil,
 		Name:   name,
@@ -28,8 +28,13 @@ func New(name string, reader *bufio.Reader, processors ...PostProcessor) *Parser
 			NodeChildren: NodeChildren{},
 		},
 		endOfSectionErr: nil,
-		PostProcessors:  processors,
+		PostProcessors:  []PostProcessor{},
 	}
+}
+
+func (parser *Parser) With(processor PostProcessor) *Parser {
+	parser.PostProcessors = append(parser.PostProcessors, processor)
+	return parser
 }
 
 func (parser *Parser) SetParent(parent *Parser) *Parser {
