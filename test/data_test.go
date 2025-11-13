@@ -227,4 +227,56 @@ var ExpectedData = []DataTestCase{
 			},
 		},
 	},
+	{
+		Filename: "07_pipes.tome",
+		Expect: &libparser.NodeTree{
+			Tomes: map[string]libparser.Node{},
+			NodeChildren: libparser.NodeChildren{
+				&libparser.PipeNode{
+					Source: &libparser.ExecNode{
+						Binary: "echo",
+						NodeArgs: libparser.NodeArgs{
+							&libparser.StringNode{Contents: "-e"},
+							&libparser.StringNode{Contents: `Hello World!\n`},
+						},
+					},
+					Dest: &libparser.ExecNode{
+						Binary: "bat",
+						NodeArgs: libparser.NodeArgs{
+							&libparser.StringNode{Contents: "--lang"},
+							&libparser.StringNode{Contents: "html"},
+						},
+					},
+				},
+				&libparser.PipeNode{
+					Source: &libparser.ExecNode{
+						Binary: "echo",
+						NodeArgs: libparser.NodeArgs{
+							&libparser.StringNode{Contents: "123"},
+						},
+					},
+					Dest: &libparser.PipeNode{
+						Source: &libparser.ExecNode{
+							Binary: "program2",
+							NodeArgs: libparser.NodeArgs{
+								&libparser.StringNode{Contents: "input"},
+							},
+						},
+						Dest: &libparser.PipeNode{
+							Source: &libparser.ExecNode{
+								Binary: "program3",
+								NodeArgs: libparser.NodeArgs{
+									&libparser.StringNode{Contents: "input"},
+								},
+							},
+							Dest: &libparser.ExecNode{
+								Binary:   "bat",
+								NodeArgs: libparser.NodeArgs{},
+							},
+						},
+					},
+				},
+			},
+		},
+	},
 }

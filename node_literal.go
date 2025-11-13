@@ -14,3 +14,7 @@ func (node *LiteralNode) Node() string {
 func (node *LiteralNode) Eval(_ Locals) (string, error) {
 	return node.Contents, nil
 }
+
+func (node *LiteralNode) String() string {
+	return node.Node()
+}

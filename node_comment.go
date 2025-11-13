@@ -10,3 +10,7 @@ type CommentNode struct {
 func (node *CommentNode) Node() string {
 	return fmt.Sprintf("#%s", node.Contents)
 }
+
+func (node *CommentNode) String() string {
+	return node.Node()
+}

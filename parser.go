@@ -164,29 +164,12 @@ func (parser *Parser) next(container *NodeChildren) *liberrors.DetailedError {
 		})
 
 	default:
-		name, err := parser.reader.ReadWord(internal.NameCharset)
-		if err != nil {
-			return parser.failReading(err)
+		parser.reader.Inner.UnreadRune()
+		node, derr := parser.readExec()
+		if derr != nil {
+			return derr
 		}
-		name = string(char) + name // We read it earlier
-
-		parser.reader.ContextBookmark()
-		args, err := parser.readArgs(false)
-		if err != nil && err != io.EOF {
-			return parser.failReading(err)
-		}
-
-		if strings.HasSuffix(name, "!") {
-			return parser.writeNode(container, &CallNode{
-				Macro:    name[:len(name)-1],
-				NodeArgs: args,
-			})
-		}
-
-		return parser.writeNode(container, &ExecNode{
-			Binary:   name,
-			NodeArgs: args,
-		})
+		return parser.writeNode(container, node)
 	}
 }
 
@@ -236,6 +219,11 @@ func (parser *Parser) readArgs(is_nested bool) (NodeArgs, error) {
 		}
 
 		switch char {
+
+		case '|':
+			parser.reader.Inner.UnreadRune()
+			out = parser.appendArg(out, &builder)
+			return out, nil
 
 		case '$':
 			expect_subcommand = true
@@ -323,6 +311,67 @@ func (parser *Parser) readSubcommand() (Node, error) {
 		Binary:   name,
 		NodeArgs: args,
 	}, nil
+}
+
+func (parser *Parser) skipWhitespace() *liberrors.DetailedError {
+	for {
+		char, err := parser.reader.Read()
+		if err != nil {
+			return parser.failReading(err)
+		}
+
+		if !unicode.IsSpace(char) {
+			parser.reader.Inner.UnreadRune()
+			return nil
+		}
+	}
+}
+
+func (parser *Parser) readExec() (Node, *liberrors.DetailedError) {
+	if derr := parser.skipWhitespace(); derr != nil {
+		return nil, derr
+	}
+
+	name, err := parser.reader.ReadWord(internal.NameCharset)
+	if err != nil {
+		return nil, parser.failReading(err)
+	}
+
+	parser.reader.ContextBookmark()
+	args, err := parser.readArgs(false)
+	if err != nil && err != io.EOF {
+		return nil, parser.failReading(err)
+	}
+
+	var node Node
+	if strings.HasSuffix(name, "!") {
+		node = &CallNode{
+			Macro:    name[:len(name)-1],
+			NodeArgs: args,
+		}
+	} else {
+		node = &ExecNode{
+			Binary:   name,
+			NodeArgs: args,
+		}
+	}
+
+	peek_char, _ := parser.reader.Peek()
+	if peek_char == '|' {
+		parser.reader.Read()
+
+		dest_node, dest_err := parser.readExec()
+		if dest_err != nil {
+			return nil, dest_err
+		}
+
+		return &PipeNode{
+			Source: node,
+			Dest:   dest_node,
+		}, nil
+	}
+
+	return node, nil
 }
 
 func (parser *Parser) readChildren() (NodeChildren, error) {

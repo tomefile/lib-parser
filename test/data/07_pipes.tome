@@ -1,0 +1,6 @@
+echo -e "Hello World!\n" | bat --lang html
+
+echo 123 \
+	| program2 input \
+	| program3 input \
+	| bat

@@ -11,3 +11,7 @@ type StringNode struct {
 func (node *StringNode) Node() string {
 	return fmt.Sprintf("%s", node.Contents)
 }
+
+func (node *StringNode) String() string {
+	return node.Node()
+}

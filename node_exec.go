@@ -12,3 +12,7 @@ type ExecNode struct {
 func (node *ExecNode) Node() string {
 	return fmt.Sprintf("%s%s", node.Binary, node.NodeArgs)
 }
+
+func (node *ExecNode) String() string {
+	return node.Node()
+}
