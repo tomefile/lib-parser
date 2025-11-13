@@ -28,6 +28,7 @@ type CharsetComparator func(rune) bool
 func NameCharset(in rune) bool {
 	return (in >= 'A' && in <= 'Z') ||
 		(in >= 'a' && in <= 'z') ||
+		(in >= '0' && in <= '9') ||
 		in == '_' ||
 		in == '-' ||
 		in == '!' ||
