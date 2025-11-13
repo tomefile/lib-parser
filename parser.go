@@ -110,7 +110,7 @@ func (parser *Parser) next(container *NodeChildren) *liberrors.DetailedError {
 		return parser.failReading(err)
 	}
 
-	if unicode.IsSpace(char) {
+	if unicode.IsSpace(char) || char == ';' {
 		return nil
 	}
 
@@ -212,7 +212,7 @@ func (parser *Parser) readArgs(is_nested bool) (NodeArgs, error) {
 		}
 
 		if !is_escaped {
-			if char == '\n' {
+			if char == '\n' || char == ';' {
 				out = parser.appendArg(out, &builder)
 				return out, nil
 			} else if unicode.IsSpace(char) {
@@ -220,7 +220,7 @@ func (parser *Parser) readArgs(is_nested bool) (NodeArgs, error) {
 				continue
 			}
 		} else {
-			if char == '\n' {
+			if char == '\n' || char == ';' {
 				continue
 			} else if unicode.IsSpace(char) {
 				// NOTE: I'm not sure if this is doing anything useful

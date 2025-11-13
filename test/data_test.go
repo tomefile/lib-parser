@@ -195,4 +195,36 @@ var ExpectedData = []DataTestCase{
 			},
 		},
 	},
+	{
+		Filename: "06_semicolon.tome",
+		Expect: &libparser.NodeTree{
+			Tomes: map[string]libparser.Node{},
+			NodeChildren: libparser.NodeChildren{
+				&libparser.ExecNode{
+					Binary: "echo",
+					NodeArgs: libparser.NodeArgs{
+						&libparser.StringNode{Contents: "1"},
+					},
+				},
+				&libparser.ExecNode{
+					Binary: "echo",
+					NodeArgs: libparser.NodeArgs{
+						&libparser.StringNode{Contents: "2"},
+					},
+				},
+				&libparser.ExecNode{
+					Binary: "echo",
+					NodeArgs: libparser.NodeArgs{
+						&libparser.StringNode{Contents: "3"},
+					},
+				},
+				&libparser.ExecNode{
+					Binary: "echo",
+					NodeArgs: libparser.NodeArgs{
+						&libparser.StringNode{Contents: "4"},
+					},
+				},
+			},
+		},
+	},
 }
