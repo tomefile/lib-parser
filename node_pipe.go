@@ -2,6 +2,7 @@ package libparser
 
 import "fmt"
 
+// Can either contain *ExecNode or *CallNode
 type PipeNode struct {
 	Source Node
 	Dest   Node
