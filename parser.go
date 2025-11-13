@@ -82,7 +82,9 @@ func (parser *Parser) writeNode(
 		node, derr = processor(node)
 		if derr != nil {
 			derr.Context = parser.reader.ErrorContext()
-			derr.Context.Buffer = strings.TrimSuffix(derr.Context.Buffer, "\n")
+			// Highlight the entire buffer
+			derr.Context.Highlighted = strings.TrimSuffix(derr.Context.Buffer, "\n")
+			derr.Context.Buffer = ""
 			parser.fillTrace(derr)
 			return derr
 		}
