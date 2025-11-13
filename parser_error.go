@@ -37,8 +37,10 @@ func (parser *Parser) failReading(err error) *liberrors.DetailedError {
 		return EOF
 	}
 
-	if err, ok := err.(*liberrors.DetailedError); ok {
-		return err
+	if derr, ok := err.(*liberrors.DetailedError); ok {
+		derr.Context = parser.reader.ErrorContext()
+		parser.fillTrace(derr)
+		return derr
 	}
 
 	return parser.fail(liberrors.ERROR_READING, err.Error())
