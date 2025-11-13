@@ -149,4 +149,50 @@ var ExpectedData = []DataTestCase{
 			},
 		},
 	},
+	{
+		Filename: "05_tomes.tome",
+		Expect: &libparser.NodeTree{
+			Tomes: map[string]libparser.Node{
+				"first":  nil,
+				"second": nil,
+			},
+			NodeChildren: libparser.NodeChildren{
+				&libparser.ExecNode{
+					Binary: "echo",
+					NodeArgs: libparser.NodeArgs{
+						&libparser.StringNode{Contents: "0"},
+					},
+				},
+				&libparser.DirectiveNode{
+					Name: "tome",
+					NodeArgs: libparser.NodeArgs{
+						&libparser.StringNode{Contents: "first"},
+					},
+					NodeChildren: libparser.NodeChildren{
+						&libparser.ExecNode{
+							Binary: "echo",
+							NodeArgs: libparser.NodeArgs{
+								&libparser.StringNode{Contents: "1.1"},
+							},
+						},
+					},
+				},
+				&libparser.DirectiveNode{
+					Name: "tome",
+					NodeArgs: libparser.NodeArgs{
+						&libparser.StringNode{Contents: "second"},
+						&libparser.StringNode{Contents: "With a description"},
+					},
+					NodeChildren: libparser.NodeChildren{
+						&libparser.ExecNode{
+							Binary: "echo",
+							NodeArgs: libparser.NodeArgs{
+								&libparser.StringNode{Contents: "2.1"},
+							},
+						},
+					},
+				},
+			},
+		},
+	},
 }

@@ -64,6 +64,17 @@ func (parser *Parser) Parse() (*NodeTree, *liberrors.DetailedError) {
 }
 
 func (parser *Parser) writeNode(container *NodeChildren, node Node) (err *liberrors.DetailedError) {
+	// The reason it's calculated early is because it can be changed
+	// during post-processing, but it is still a tome.
+	tome_name := ""
+	switch node := node.(type) {
+	case *DirectiveNode:
+		if node.Name == "tome" && len(node.NodeArgs) > 0 {
+			arg := node.NodeArgs[0]
+			tome_name = arg.Node()
+		}
+	}
+
 	for _, processor := range parser.PostProcessors {
 		node, err = processor(node)
 		if err != nil {
@@ -73,6 +84,10 @@ func (parser *Parser) writeNode(container *NodeChildren, node Node) (err *liberr
 			// Node was discarded
 			return nil
 		}
+	}
+
+	if tome_name != "" {
+		parser.root.Tomes[tome_name] = node
 	}
 
 	*container = append(*container, node)

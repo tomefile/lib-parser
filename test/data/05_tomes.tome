@@ -1,0 +1,9 @@
+echo 0
+
+:tome first {
+	echo 1.1
+}
+
+:tome second "With a description" {
+	echo 2.1
+}

@@ -27,7 +27,12 @@ func TestAll(test *testing.T) {
 				test.FailNow()
 			}
 
-			assert.DeepEqual(test, test_case.Expect, tree)
+			assert.DeepEqual(test, test_case.Expect.NodeChildren, tree.NodeChildren)
+			for key := range tree.Tomes {
+				// We don't care about what it points to, just that it exists.
+				tree.Tomes[key] = nil
+			}
+			assert.DeepEqual(test, test_case.Expect.Tomes, tree.Tomes)
 		})
 	}
 }

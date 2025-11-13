@@ -10,5 +10,5 @@ type DirectiveNode struct {
 }
 
 func (node *DirectiveNode) Node() string {
-	return fmt.Sprintf("[directive %q]", node.Name)
+	return fmt.Sprintf(":%s%s%s", node.Name, node.NodeArgs, node.NodeChildren)
 }

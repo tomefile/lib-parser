@@ -10,5 +10,5 @@ type CallNode struct {
 }
 
 func (node *CallNode) Node() string {
-	return fmt.Sprintf("[call %q]", node.Macro)
+	return fmt.Sprintf("%s!%s", node.Macro, node.NodeArgs)
 }

@@ -15,5 +15,5 @@ type StringNode struct {
 }
 
 func (node *StringNode) Node() string {
-	return fmt.Sprintf("[string %q]", node.Contents)
+	return fmt.Sprintf("%s", node.Contents)
 }

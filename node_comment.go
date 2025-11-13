@@ -8,5 +8,5 @@ type CommentNode struct {
 }
 
 func (node *CommentNode) Node() string {
-	return fmt.Sprintf("[comment %q]", node.Contents)
+	return fmt.Sprintf("#%s", node.Contents)
 }
