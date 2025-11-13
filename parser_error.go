@@ -38,8 +38,6 @@ func (parser *Parser) failReading(err error) *liberrors.DetailedError {
 	}
 
 	if derr, ok := err.(*liberrors.DetailedError); ok {
-		derr.Context = parser.reader.ErrorContext()
-		parser.fillTrace(derr)
 		return derr
 	}
 
