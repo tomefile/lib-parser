@@ -163,12 +163,14 @@ func (parser *Parser) next(container *NodeChildren) *liberrors.DetailedError {
 			NodeChildren: children,
 		})
 
-	case '|':
-		return parser.failSyntax(
-			"unexpected '|' at the beginning of the line. If it's a part of a command on the line above, append '\\' at the end.",
-		)
-
 	default:
+		if !internal.NameCharset(char) {
+			return parser.failSyntax(
+				"unexpected %q at the beginning of the line. If it's a part of a statement on the line above, append '\\' at the end of the previous line.",
+				char,
+			)
+		}
+
 		parser.reader.Inner.UnreadRune()
 		node, derr := parser.readExec()
 		if derr != nil {
