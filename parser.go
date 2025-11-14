@@ -281,13 +281,6 @@ func (parser *Parser) readArgs(is_nested bool) (NodeArgs, error) {
 				out = append(out, &StringNode{Contents: contents})
 			}
 
-		case '<':
-			contents, err := parser.reader.ReadInsideQuotes('>')
-			if err != nil {
-				return nil, err
-			}
-			out = append(out, &LiteralNode{Contents: "<" + contents + ">"})
-
 		default:
 			if is_escaped {
 				builder.WriteRune('\\')

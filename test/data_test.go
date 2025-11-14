@@ -17,7 +17,7 @@ var ExpectedData = []DataTestCase{
 				&libparser.DirectiveNode{
 					Name: "include",
 					NodeArgs: libparser.NodeArgs{
-						&libparser.LiteralNode{Contents: "<std>"},
+						&libparser.StringNode{Contents: "@std"},
 					},
 					NodeChildren: libparser.NodeChildren{},
 				},
