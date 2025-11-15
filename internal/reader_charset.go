@@ -35,6 +35,20 @@ func NameCharset(in rune) bool {
 		in == '$'
 }
 
+func FilenameCharset(in rune) bool {
+	return NameCharset(in) ||
+		in == '.' ||
+		in == '~' ||
+		in == '/' ||
+		in == '\\'
+}
+
+func QuotesCharset(in rune) bool {
+	return in == '\'' ||
+		in == '"' ||
+		in == '`'
+}
+
 func DelimCharset(delims ...rune) CharsetComparator {
 	return func(in rune) bool {
 		return !slices.Contains(delims, in)

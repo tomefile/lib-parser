@@ -279,4 +279,22 @@ var ExpectedData = []DataTestCase{
 			},
 		},
 	},
+	{
+		Filename: "08_redirects.tome",
+		Expect: &libparser.NodeTree{
+			Tomes: map[string]libparser.Node{},
+			NodeChildren: libparser.NodeChildren{
+				&libparser.RedirectNode{
+					Type: libparser.REDIRECT_STDOUT,
+					Source: &libparser.ExecNode{
+						Binary: "echo",
+						NodeArgs: libparser.NodeArgs{
+							&libparser.StringNode{Contents: "Hello World"},
+						},
+					},
+					Dest: &libparser.StringNode{Contents: "filename.txt"},
+				},
+			},
+		},
+	},
 }

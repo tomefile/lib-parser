@@ -227,7 +227,7 @@ func (parser *Parser) readArgs(is_nested bool) (NodeArgs, error) {
 
 		switch char {
 
-		case '|':
+		case '|', '>', '<':
 			parser.reader.Inner.UnreadRune()
 			out = parser.appendArg(out, &builder)
 			return out, nil
@@ -327,6 +327,45 @@ func (parser *Parser) skipWhitespace() *liberrors.DetailedError {
 	}
 }
 
+func (parser *Parser) readFilename() (Node, *liberrors.DetailedError) {
+	if derr := parser.skipWhitespace(); derr != nil {
+		return nil, derr
+	}
+
+	var builder strings.Builder
+
+	char, err := parser.reader.Read()
+	if err != nil {
+		return nil, parser.failReading(err)
+	}
+
+	switch {
+
+	case internal.FilenameCharset(char):
+		builder.WriteRune(char)
+		word, err := parser.reader.ReadWord(internal.DelimCharset('\n', ' '))
+		if err != nil {
+			return nil, parser.failReading(err)
+		}
+		builder.WriteString(word)
+		return &StringNode{Contents: builder.String()}, nil
+
+	case internal.QuotesCharset(char):
+		contents, err := parser.reader.ReadInsideQuotes(char)
+		if err != nil {
+			return nil, parser.failReading(err)
+		}
+		if char == '`' {
+			return &LiteralNode{Contents: contents}, nil
+		}
+		return &StringNode{Contents: contents}, nil
+
+	default:
+		parser.reader.Inner.UnreadRune()
+		return nil, parser.failSyntax("unexpected character %q in file name", char)
+	}
+}
+
 func (parser *Parser) readExec() (Node, *liberrors.DetailedError) {
 	if derr := parser.skipWhitespace(); derr != nil {
 		return nil, derr
@@ -357,7 +396,9 @@ func (parser *Parser) readExec() (Node, *liberrors.DetailedError) {
 	}
 
 	peek_char, _ := parser.reader.Peek()
-	if peek_char == '|' {
+	switch peek_char {
+
+	case '|':
 		parser.reader.Read()
 
 		dest_node, dest_err := parser.readExec()
@@ -368,6 +409,51 @@ func (parser *Parser) readExec() (Node, *liberrors.DetailedError) {
 		return &PipeNode{
 			Source: node,
 			Dest:   dest_node,
+		}, nil
+
+	case '>':
+		parser.reader.Read()
+		peek_char, _ = parser.reader.Peek()
+		redirect_type := REDIRECT_STDOUT
+		if peek_char == '>' {
+			parser.reader.Read()
+			redirect_type = REDIRECT_STDERR
+		}
+
+		dest_node, derr := parser.readFilename()
+		if derr != nil {
+			return nil, derr
+		}
+
+		return &RedirectNode{
+			Type:   redirect_type,
+			Source: node,
+			Dest:   dest_node,
+		}, nil
+
+	case '<':
+		parser.reader.Read()
+		peek_char, _ = parser.reader.Peek()
+		redirect_type := REDIRECT_STDIN
+		if peek_char == '<' {
+			parser.reader.Read()
+			redirect_type = REDIRECT_HEREDOC
+			peek_char, _ = parser.reader.Peek()
+			if peek_char == '<' {
+				parser.reader.Read()
+				redirect_type = REDIRECT_HERESTR
+			}
+		}
+
+		src_node, derr := parser.readFilename()
+		if derr != nil {
+			return nil, derr
+		}
+
+		return &RedirectNode{
+			Type:   redirect_type,
+			Source: src_node,
+			Dest:   node,
 		}, nil
 	}
 
