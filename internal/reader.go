@@ -35,6 +35,15 @@ func (reader *SourceCodeReader) Peek() (byte, error) {
 	return data[0], err
 }
 
+func (reader *SourceCodeReader) Unread() {
+	reader.Inner.UnreadRune()
+	if reader.buffer.Len() != 0 {
+		unreadBuilderRune(&reader.buffer)
+	} else if reader.context.Len() != 0 {
+		unreadBuilderRune(&reader.context)
+	}
+}
+
 func (reader *SourceCodeReader) Read() (rune, error) {
 	char, size, err := reader.Inner.ReadRune()
 	if err != nil {
@@ -55,4 +64,10 @@ func (reader *SourceCodeReader) Read() (rune, error) {
 
 	reader.buffer.WriteRune(char)
 	return char, nil
+}
+
+func unreadBuilderRune(builder *strings.Builder) {
+	buffer := []rune(builder.String())
+	builder.Reset()
+	builder.WriteString(string(buffer[:len(buffer)-1]))
 }

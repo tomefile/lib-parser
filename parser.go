@@ -171,7 +171,7 @@ func (parser *Parser) next(container *NodeChildren) *liberrors.DetailedError {
 			)
 		}
 
-		parser.reader.Inner.UnreadRune()
+		parser.reader.Unread()
 		node, derr := parser.readExec()
 		if derr != nil {
 			return derr
@@ -228,7 +228,7 @@ func (parser *Parser) readArgs(is_nested bool) (NodeArgs, error) {
 		switch char {
 
 		case '|', '>', '<':
-			parser.reader.Inner.UnreadRune()
+			parser.reader.Unread()
 			out = parser.appendArg(out, &builder)
 			return out, nil
 
@@ -257,7 +257,7 @@ func (parser *Parser) readArgs(is_nested bool) (NodeArgs, error) {
 
 		case '{':
 			if !expect_subcommand {
-				parser.reader.Inner.UnreadRune()
+				parser.reader.Unread()
 				return parser.appendArg(out, &builder), nil
 			}
 			contents, err := parser.reader.ReadInsideQuotes('}')
@@ -321,7 +321,7 @@ func (parser *Parser) skipWhitespace() *liberrors.DetailedError {
 		}
 
 		if !unicode.IsSpace(char) {
-			parser.reader.Inner.UnreadRune()
+			parser.reader.Unread()
 			return nil
 		}
 	}
@@ -361,7 +361,7 @@ func (parser *Parser) readFilename() (Node, *liberrors.DetailedError) {
 		return &StringNode{Contents: contents}, nil
 
 	default:
-		parser.reader.Inner.UnreadRune()
+		parser.reader.Unread()
 		return nil, parser.failSyntax("unexpected character %q in file name", char)
 	}
 }

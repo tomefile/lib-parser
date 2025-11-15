@@ -15,7 +15,7 @@ func (reader *SourceCodeReader) ReadWord(charset_comparator func(rune) bool) (st
 		}
 
 		if !charset_comparator(char) {
-			reader.Inner.UnreadRune()
+			reader.Unread()
 			return builder.String(), nil
 		}
 

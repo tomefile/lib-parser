@@ -152,7 +152,7 @@ func (formatter *StringFormatter) parseExpansion() (Segment, error) {
 			}, nil
 
 		default:
-			formatter.reader.Inner.UnreadRune()
+			formatter.reader.Unread()
 			return nil, fmt.Errorf(
 				"unexpected character %q in a variable expansion",
 				char,
@@ -221,7 +221,7 @@ func (formatter *StringFormatter) parseName() (string, error) {
 		if internal.NameCharset(char) {
 			builder.WriteRune(char)
 		} else {
-			formatter.reader.Inner.UnreadRune()
+			formatter.reader.Unread()
 			return builder.String(), nil
 		}
 	}
