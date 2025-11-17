@@ -24,7 +24,7 @@ Things that need to be done before `v1`:
 - [x] Support for `;` to separate statements.
 - [ ] Support `&&` and `||` in commands.
 - [x] Pipes `|`.
-- [-] Redirects `>`, `<`, `>>`, `<<`, `<<<`.
+- [ ] Redirects `>`, `<`, `>>`, `<<`, `<<<`.
 - [ ] Better test coverage
 
 ## Usage
