@@ -3,7 +3,6 @@ package libparser
 import (
 	"io"
 	"strings"
-	"unicode"
 
 	liberrors "github.com/tomefile/lib-errors"
 	"github.com/tomefile/lib-parser/readers"
@@ -63,7 +62,7 @@ func (parser *Parser) next(container *NodeChildren) *liberrors.DetailedError {
 		return parser.failReading(err)
 	}
 
-	if unicode.IsSpace(char) || char == ';' {
+	if readers.WhitespaceCharset(char) || char == ';' {
 		return nil
 	}
 
@@ -158,14 +157,14 @@ func (parser *Parser) readArgs(is_nested bool) (NodeArgs, error) {
 			if char == '\n' || char == ';' {
 				out = parser.appendArg(out, &builder)
 				return out, nil
-			} else if unicode.IsSpace(char) {
+			} else if readers.WhitespaceCharset(char) {
 				out = parser.appendArg(out, &builder)
 				continue
 			}
 		} else {
 			if char == '\n' || char == ';' {
 				continue
-			} else if unicode.IsSpace(char) {
+			} else if readers.WhitespaceCharset(char) {
 				// NOTE: I'm not sure if this is doing anything useful
 				out = parser.appendArg(out, &builder)
 				continue
@@ -273,7 +272,7 @@ func (parser *Parser) skipWhitespace() *liberrors.DetailedError {
 			return parser.failReading(err)
 		}
 
-		if !unicode.IsSpace(char) {
+		if !readers.WhitespaceCharset(char) {
 			parser.reader.Unread()
 			return nil
 		}

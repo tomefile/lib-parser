@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"strings"
-	"unicode"
 
 	liberrors "github.com/tomefile/lib-errors"
 	"github.com/tomefile/lib-parser/readers"
@@ -54,7 +53,7 @@ func (formatter *StringFormatter) Format() ([]Segment, *liberrors.DetailedError)
 			if peek_err != nil {
 				return formatter.out, formatter.fail(err)
 			}
-			if unicode.IsSpace(rune(peer_char)) {
+			if readers.WhitespaceCharset(rune(peer_char)) {
 				formatter.builder.WriteRune(char)
 				break
 			}

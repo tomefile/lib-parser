@@ -32,6 +32,17 @@ func QuotesCharset(in rune) bool {
 		in == '`'
 }
 
+func WhitespaceCharset(in rune) bool {
+	return in == '\t' ||
+		in == '\n' ||
+		in == '\v' ||
+		in == '\f' ||
+		in == '\r' ||
+		in == ' ' ||
+		in == 0x85 ||
+		in == 0xA0
+}
+
 func (reader *Reader) ReadSequence(comparator CharsetComparator) (string, error) {
 	var builder strings.Builder
 
