@@ -9,7 +9,7 @@ import (
 	"github.com/tomefile/lib-parser/readers"
 )
 
-func (parser *Parser) write(container *NodeChildren, node Node) (derr *liberrors.DetailedError) {
+func (parser *Parser) process(node Node) (Node, *liberrors.DetailedError) {
 	// The reason it's calculated early is because it can be changed
 	// during post-processing, but it is still a tome.
 	tome_name := ""
@@ -21,6 +21,7 @@ func (parser *Parser) write(container *NodeChildren, node Node) (derr *liberrors
 		}
 	}
 
+	var derr *liberrors.DetailedError
 	for _, processor := range parser.PostProcessors {
 		node, derr = processor(node)
 		if derr != nil {
@@ -29,16 +30,25 @@ func (parser *Parser) write(container *NodeChildren, node Node) (derr *liberrors
 			derr.Context.Highlighted = strings.TrimSuffix(derr.Context.Buffer, "\n")
 			derr.Context.Buffer = ""
 			parser.fillTrace(derr)
-			return derr
+			return node, derr
 		}
 		if node == nil {
 			// Node was discarded
-			return nil
+			return nil, nil
 		}
 	}
 
 	if tome_name != "" {
 		parser.root.Tomes[tome_name] = node
+	}
+
+	return node, nil
+}
+
+func (parser *Parser) write(container *NodeChildren, node Node) (derr *liberrors.DetailedError) {
+	node, derr = parser.process(node)
+	if derr != nil || node == nil {
+		return derr
 	}
 
 	*container = append(*container, node)
