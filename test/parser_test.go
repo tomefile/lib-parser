@@ -21,11 +21,11 @@ func TestAll(test *testing.T) {
 
 			parser := libparser.New(file).With(libparser.PostNoShebang)
 
-			tree, derr := parser.Parse()
-			if derr != nil {
+			if derr := parser.Parse(); derr != nil {
 				derr.Print(test.Output())
 				test.FailNow()
 			}
+			tree := parser.Result()
 
 			assert.DeepEqual(test, test_case.Expect.NodeChildren, tree.NodeChildren)
 			for key := range tree.Tomes {
@@ -60,11 +60,11 @@ func TestPostProcessor(test *testing.T) {
 			},
 		)
 
-	tree, derr := parser.Parse()
-	if derr != nil {
+	if derr := parser.Parse(); derr != nil {
 		derr.Print(test.Output())
 		test.FailNow()
 	}
+	tree := parser.Result()
 
 	assert.DeepEqual(test, tree.NodeChildren, libparser.NodeChildren{
 		&libparser.CommentNode{

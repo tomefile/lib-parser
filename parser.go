@@ -15,7 +15,7 @@ type Parser struct {
 	Name            string
 	reader          *readers.Reader
 	root            *NodeTree
-	endOfSectionErr *liberrors.DetailedError
+	endOfSectionErr *liberrors.DetailedError // FIXME: There should be a better way
 	PostProcessors  []PostProcessor
 }
 
@@ -47,7 +47,11 @@ func (parser *Parser) SetParent(parent *Parser) *Parser {
 	return parser
 }
 
-func (parser *Parser) Parse() (*NodeTree, *liberrors.DetailedError) {
+func (parser *Parser) Result() *NodeTree {
+	return parser.root
+}
+
+func (parser *Parser) Parse() *liberrors.DetailedError {
 	parser.endOfSectionErr = parser.failSyntax("unexpected '}' with no matching '{' pair")
 
 	for {
@@ -56,11 +60,11 @@ func (parser *Parser) Parse() (*NodeTree, *liberrors.DetailedError) {
 			if err == EOF {
 				break
 			}
-			return parser.root, err
+			return err
 		}
 	}
 
-	return parser.root, nil
+	return nil
 }
 
 func (parser *Parser) writeNode(
