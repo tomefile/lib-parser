@@ -49,19 +49,22 @@ func (parser *Parser) Result() *NodeTree {
 func (parser *Parser) Parse() *liberrors.DetailedError {
 	for {
 		err := parser.next(&parser.root.NodeChildren)
-		if err != nil {
-			if err == EOF {
-				break
-			}
-			if err == EOS {
-				return parser.failSyntax("unexpected '}' with no matching '{' pair")
-			}
-			if err == UNEXPECTED_EOF {
-				return parser.failReading(err)
-			}
+		switch err {
+
+		case nil:
+			continue
+
+		case EOF:
+			return nil
+
+		case EOS:
+			return parser.failSyntax("unexpected '}' with no matching '{' pair")
+
+		case UNEXPECTED_EOF:
+			return parser.failReading(err)
+
+		default:
 			return err
 		}
 	}
-
-	return nil
 }

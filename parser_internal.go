@@ -453,16 +453,19 @@ func (parser *Parser) readChildren() (NodeChildren, error) {
 
 	for {
 		derr := parser.next(&out)
-		if derr != nil {
-			if derr == EOS {
-				break
-			}
-			if derr == EOF {
-				return out, UNEXPECTED_EOF
-			}
+		switch derr {
+
+		case nil:
+			continue
+
+		case EOS:
+			return out, nil
+
+		case EOF:
+			return out, UNEXPECTED_EOF
+
+		default:
 			return out, derr
 		}
 	}
-
-	return out, nil
 }
