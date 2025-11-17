@@ -9,10 +9,7 @@ import (
 	"github.com/tomefile/lib-parser/readers"
 )
 
-func (parser *Parser) writeNode(
-	container *NodeChildren,
-	node Node,
-) (derr *liberrors.DetailedError) {
+func (parser *Parser) write(container *NodeChildren, node Node) (derr *liberrors.DetailedError) {
 	// The reason it's calculated early is because it can be changed
 	// during post-processing, but it is still a tome.
 	tome_name := ""
@@ -72,7 +69,7 @@ func (parser *Parser) next(container *NodeChildren) *liberrors.DetailedError {
 			return parser.failReading(err)
 		}
 		parser.reader.Inner.ReadRune() // Consume the \n character
-		return parser.writeNode(container, &CommentNode{Contents: comment})
+		return parser.write(container, &CommentNode{Contents: comment})
 
 	case ':':
 		name, err := parser.reader.ReadSequence(readers.NameCharset)
@@ -103,7 +100,7 @@ func (parser *Parser) next(container *NodeChildren) *liberrors.DetailedError {
 			}
 		}
 
-		return parser.writeNode(container, &DirectiveNode{
+		return parser.write(container, &DirectiveNode{
 			Name:         name,
 			NodeArgs:     args,
 			NodeChildren: children,
@@ -122,7 +119,7 @@ func (parser *Parser) next(container *NodeChildren) *liberrors.DetailedError {
 		if derr != nil {
 			return derr
 		}
-		return parser.writeNode(container, node)
+		return parser.write(container, node)
 	}
 }
 
