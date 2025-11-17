@@ -8,12 +8,11 @@ import (
 )
 
 type Parser struct {
-	parent          *Parser
-	Name            string
-	reader          *readers.Reader
-	root            *NodeTree
-	endOfSectionErr *liberrors.DetailedError // FIXME: There should be a better way
-	PostProcessors  []PostProcessor
+	parent         *Parser
+	Name           string
+	reader         *readers.Reader
+	root           *NodeTree
+	PostProcessors []PostProcessor
 }
 
 func New(file File) *Parser {
@@ -25,8 +24,7 @@ func New(file File) *Parser {
 			Tomes:        map[string]Node{},
 			NodeChildren: NodeChildren{},
 		},
-		endOfSectionErr: nil,
-		PostProcessors:  []PostProcessor{},
+		PostProcessors: []PostProcessor{},
 	}
 }
 
@@ -49,13 +47,17 @@ func (parser *Parser) Result() *NodeTree {
 }
 
 func (parser *Parser) Parse() *liberrors.DetailedError {
-	parser.endOfSectionErr = parser.failSyntax("unexpected '}' with no matching '{' pair")
-
 	for {
 		err := parser.next(&parser.root.NodeChildren)
 		if err != nil {
 			if err == EOF {
 				break
+			}
+			if err == EOS {
+				return parser.failSyntax("unexpected '}' with no matching '{' pair")
+			}
+			if err == UNEXPECTED_EOF {
+				return parser.failReading(err)
 			}
 			return err
 		}

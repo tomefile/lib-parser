@@ -70,7 +70,7 @@ func (parser *Parser) next(container *NodeChildren) *liberrors.DetailedError {
 	switch char {
 
 	case '}':
-		return parser.endOfSectionErr
+		return EOS
 
 	case '#':
 		comment, err := parser.reader.ReadDelimited('\n')
@@ -452,12 +452,15 @@ func (parser *Parser) readChildren() (NodeChildren, error) {
 	out := NodeChildren{}
 
 	for {
-		err := parser.next(&out)
-		if err != nil {
-			if err == EOF || err == parser.endOfSectionErr {
+		derr := parser.next(&out)
+		if derr != nil {
+			if derr == EOS {
 				break
 			}
-			return out, err
+			if derr == EOF {
+				return out, UNEXPECTED_EOF
+			}
+			return out, derr
 		}
 	}
 

@@ -7,7 +7,17 @@ import (
 	liberrors "github.com/tomefile/lib-errors"
 )
 
+// End of File
 var EOF = &liberrors.DetailedError{Name: "EOF"}
+
+// Unexpected End of File
+var UNEXPECTED_EOF = &liberrors.DetailedError{
+	Name:    liberrors.ERROR_READING,
+	Details: "unexpected EOF when expecting a '}'",
+}
+
+// End of Section
+var EOS = &liberrors.DetailedError{Name: "EOS"}
 
 func (parser *Parser) fillTrace(out *liberrors.DetailedError) {
 	out.AddTraceItem(liberrors.TraceItem{
