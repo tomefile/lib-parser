@@ -7,13 +7,13 @@ import (
 	"unicode"
 
 	liberrors "github.com/tomefile/lib-errors"
-	"github.com/tomefile/lib-parser/internal"
+	"github.com/tomefile/lib-parser/readers"
 )
 
 type Parser struct {
 	parent          *Parser
 	Name            string
-	reader          *internal.SourceCodeReader
+	reader          *readers.Reader
 	root            *NodeTree
 	endOfSectionErr *liberrors.DetailedError
 	PostProcessors  []PostProcessor
@@ -23,7 +23,7 @@ func New(file File) *Parser {
 	return &Parser{
 		parent: nil,
 		Name:   file.Name(),
-		reader: internal.NewSourceCodeReader(bufio.NewReader(file)),
+		reader: readers.New(bufio.NewReader(file)),
 		root: &NodeTree{
 			Tomes:        map[string]Node{},
 			NodeChildren: NodeChildren{},
@@ -81,7 +81,7 @@ func (parser *Parser) writeNode(
 	for _, processor := range parser.PostProcessors {
 		node, derr = processor(node)
 		if derr != nil {
-			derr.Context = parser.reader.ErrorContext()
+			derr.Context = parser.reader.Context()
 			// Highlight the entire buffer
 			derr.Context.Highlighted = strings.TrimSuffix(derr.Context.Buffer, "\n")
 			derr.Context.Buffer = ""
@@ -103,7 +103,7 @@ func (parser *Parser) writeNode(
 }
 
 func (parser *Parser) next(container *NodeChildren) *liberrors.DetailedError {
-	parser.reader.ContextReset()
+	parser.reader.MarkContext()
 
 	char, err := parser.reader.Read()
 	if err != nil {
@@ -114,14 +114,14 @@ func (parser *Parser) next(container *NodeChildren) *liberrors.DetailedError {
 		return nil
 	}
 
-	parser.reader.ContextBookmark()
+	parser.reader.MarkSegment()
 	switch char {
 
 	case '}':
 		return parser.endOfSectionErr
 
 	case '#':
-		comment, err := parser.reader.ReadWord(internal.DelimCharset('\n'))
+		comment, err := parser.reader.ReadDelimited('\n')
 		if err != nil {
 			return parser.failReading(err)
 		}
@@ -129,7 +129,7 @@ func (parser *Parser) next(container *NodeChildren) *liberrors.DetailedError {
 		return parser.writeNode(container, &CommentNode{Contents: comment})
 
 	case ':':
-		name, err := parser.reader.ReadWord(internal.NameCharset)
+		name, err := parser.reader.ReadSequence(readers.NameCharset)
 		if err != nil {
 			return parser.failReading(err)
 		}
@@ -137,13 +137,13 @@ func (parser *Parser) next(container *NodeChildren) *liberrors.DetailedError {
 			return parser.failSyntax("missing a directive name after ':'")
 		}
 
-		parser.reader.ContextBookmark()
+		parser.reader.MarkSegment()
 		args, err := parser.readArgs(false)
 		if err != nil && err != io.EOF {
 			return parser.failReading(err)
 		}
 
-		parser.reader.ContextBookmark()
+		parser.reader.MarkSegment()
 		children := NodeChildren{}
 		char, err := parser.reader.Peek()
 		if err != nil && err != io.EOF {
@@ -164,7 +164,7 @@ func (parser *Parser) next(container *NodeChildren) *liberrors.DetailedError {
 		})
 
 	default:
-		if !internal.NameCharset(char) {
+		if !readers.NameCharset(char) {
 			return parser.failSyntax(
 				"unexpected %q at the beginning of the line. If it's a part of a statement on the line above, append '\\' at the end of the previous line.",
 				char,
@@ -293,7 +293,7 @@ func (parser *Parser) readArgs(is_nested bool) (NodeArgs, error) {
 }
 
 func (parser *Parser) readSubcommand() (Node, error) {
-	name, err := parser.reader.ReadWord(internal.NameCharset)
+	name, err := parser.reader.ReadSequence(readers.NameCharset)
 	if err != nil {
 		return nil, err
 	}
@@ -301,7 +301,7 @@ func (parser *Parser) readSubcommand() (Node, error) {
 		return &StringNode{Contents: "$("}, err
 	}
 
-	parser.reader.ContextBookmark()
+	parser.reader.MarkSegment()
 	args, err := parser.readArgs(true)
 	if err != nil && err != io.EOF {
 		return nil, err
@@ -327,6 +327,76 @@ func (parser *Parser) skipWhitespace() *liberrors.DetailedError {
 	}
 }
 
+func (parser *Parser) readRedirection(node Node) (Node, *liberrors.DetailedError) {
+	if derr := parser.skipWhitespace(); derr != nil {
+		return nil, derr
+	}
+
+	char, err := parser.reader.Read()
+	if err != nil {
+		return nil, parser.failReading(err)
+	}
+
+	switch char {
+	case '>':
+		peek_char, _ := parser.reader.Peek()
+		redirect_type := REDIRECT_STDOUT
+		if peek_char == '>' {
+			parser.reader.Read()
+			redirect_type = REDIRECT_STDERR
+		}
+
+		dest_node, derr := parser.readFilename()
+		if derr != nil {
+			return nil, derr
+		}
+
+		following, derr := parser.readRedirection(node)
+		if derr != nil {
+			return nil, derr
+		}
+		if following == nil {
+			return &RedirectNode{
+				Type:   redirect_type,
+				Source: node,
+				Dest:   dest_node,
+			}, nil
+		}
+		return &ChildRedirectNode{
+			Source:  node,
+			OutDest: dest_node,
+			ErrDest: following,
+		}, nil
+
+	case '<':
+		peek_char, _ := parser.reader.Peek()
+		redirect_type := REDIRECT_STDIN
+		if peek_char == '<' {
+			parser.reader.Read()
+			redirect_type = REDIRECT_HEREDOC
+			peek_char, _ = parser.reader.Peek()
+			if peek_char == '<' {
+				parser.reader.Read()
+				redirect_type = REDIRECT_HERESTR
+			}
+		}
+
+		src_node, derr := parser.readFilename()
+		if derr != nil {
+			return nil, derr
+		}
+
+		return &RedirectNode{
+			Type:   redirect_type,
+			Source: src_node,
+			Dest:   node,
+		}, nil
+
+	default:
+		return nil, nil
+	}
+}
+
 func (parser *Parser) readFilename() (Node, *liberrors.DetailedError) {
 	if derr := parser.skipWhitespace(); derr != nil {
 		return nil, derr
@@ -341,16 +411,16 @@ func (parser *Parser) readFilename() (Node, *liberrors.DetailedError) {
 
 	switch {
 
-	case internal.FilenameCharset(char):
+	case readers.FilenameCharset(char):
 		builder.WriteRune(char)
-		word, err := parser.reader.ReadWord(internal.DelimCharset('\n', ' '))
+		word, err := parser.reader.ReadDelimited('\n', ' ')
 		if err != nil {
 			return nil, parser.failReading(err)
 		}
 		builder.WriteString(word)
 		return &StringNode{Contents: builder.String()}, nil
 
-	case internal.QuotesCharset(char):
+	case readers.QuotesCharset(char):
 		contents, err := parser.reader.ReadInsideQuotes(char)
 		if err != nil {
 			return nil, parser.failReading(err)
@@ -371,12 +441,12 @@ func (parser *Parser) readExec() (Node, *liberrors.DetailedError) {
 		return nil, derr
 	}
 
-	name, err := parser.reader.ReadWord(internal.NameCharset)
+	name, err := parser.reader.ReadSequence(readers.NameCharset)
 	if err != nil {
 		return nil, parser.failReading(err)
 	}
 
-	parser.reader.ContextBookmark()
+	parser.reader.MarkSegment()
 	args, err := parser.readArgs(false)
 	if err != nil && err != io.EOF {
 		return nil, parser.failReading(err)
@@ -411,50 +481,16 @@ func (parser *Parser) readExec() (Node, *liberrors.DetailedError) {
 			Dest:   dest_node,
 		}, nil
 
-	case '>':
-		parser.reader.Read()
-		peek_char, _ = parser.reader.Peek()
-		redirect_type := REDIRECT_STDOUT
-		if peek_char == '>' {
-			parser.reader.Read()
-			redirect_type = REDIRECT_STDERR
-		}
-
-		dest_node, derr := parser.readFilename()
+	case '>', '<':
+		re_node, derr := parser.readRedirection(node)
 		if derr != nil {
 			return nil, derr
 		}
-
-		return &RedirectNode{
-			Type:   redirect_type,
-			Source: node,
-			Dest:   dest_node,
-		}, nil
-
-	case '<':
-		parser.reader.Read()
-		peek_char, _ = parser.reader.Peek()
-		redirect_type := REDIRECT_STDIN
-		if peek_char == '<' {
-			parser.reader.Read()
-			redirect_type = REDIRECT_HEREDOC
-			peek_char, _ = parser.reader.Peek()
-			if peek_char == '<' {
-				parser.reader.Read()
-				redirect_type = REDIRECT_HERESTR
-			}
+		if re_node == nil {
+			return node, nil
 		}
+		return re_node, nil
 
-		src_node, derr := parser.readFilename()
-		if derr != nil {
-			return nil, derr
-		}
-
-		return &RedirectNode{
-			Type:   redirect_type,
-			Source: src_node,
-			Dest:   node,
-		}, nil
 	}
 
 	return node, nil

@@ -57,3 +57,22 @@ func (node RedirectType) String() string {
 
 	return ""
 }
+
+type ChildRedirectNode struct {
+	Source  Node
+	OutDest Node
+	ErrDest Node
+}
+
+func (node *ChildRedirectNode) Node() string {
+	return fmt.Sprintf(
+		"%s > %s >> %s",
+		node.Source.Node(),
+		node.OutDest.Node(),
+		node.ErrDest.Node(),
+	)
+}
+
+func (node *ChildRedirectNode) String() string {
+	return node.Node()
+}

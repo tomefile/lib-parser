@@ -25,7 +25,7 @@ func (parser *Parser) fail(name, details string) *liberrors.DetailedError {
 		Name:    name,
 		Details: details,
 		Trace:   nil,
-		Context: parser.reader.ErrorContext(),
+		Context: parser.reader.Context(),
 	}
 
 	parser.fillTrace(derr)

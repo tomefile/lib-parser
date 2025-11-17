@@ -8,18 +8,18 @@ import (
 	"unicode"
 
 	liberrors "github.com/tomefile/lib-errors"
-	"github.com/tomefile/lib-parser/internal"
+	"github.com/tomefile/lib-parser/readers"
 )
 
 type StringFormatter struct {
-	reader  *internal.SourceCodeReader
+	reader  *readers.Reader
 	builder strings.Builder
 	out     []Segment
 }
 
 func NewStringFormatter(input string) *StringFormatter {
 	return &StringFormatter{
-		reader:  internal.NewSourceCodeReader(bufio.NewReader(strings.NewReader(input))),
+		reader:  readers.New(bufio.NewReader(strings.NewReader(input))),
 		builder: strings.Builder{},
 		out:     []Segment{},
 	}
@@ -30,12 +30,12 @@ func (formatter *StringFormatter) fail(err error) *liberrors.DetailedError {
 		Name:    liberrors.ERROR_FORMATTING,
 		Details: err.Error(),
 		Trace:   []liberrors.TraceItem{},
-		Context: formatter.reader.ErrorContext(),
+		Context: formatter.reader.Context(),
 	}
 }
 
 func (formatter *StringFormatter) Format() ([]Segment, *liberrors.DetailedError) {
-	formatter.reader.ContextReset()
+	formatter.reader.MarkContext()
 
 	for {
 		char, err := formatter.reader.Read()
@@ -58,7 +58,7 @@ func (formatter *StringFormatter) Format() ([]Segment, *liberrors.DetailedError)
 				formatter.builder.WriteRune(char)
 				break
 			}
-			formatter.reader.ContextBookmark()
+			formatter.reader.MarkSegment()
 			formatter.writeBuffer()
 			segment, err := formatter.parseVariable()
 			if err != nil {
@@ -78,14 +78,14 @@ func (formatter *StringFormatter) parseVariable() (Segment, error) {
 		return nil, err
 	}
 
+	formatter.reader.MarkSegment()
+
 	switch char {
 
 	case '{':
-		formatter.reader.ContextBookmark()
 		return formatter.parseExpansion()
 
 	default:
-		formatter.reader.ContextBookmark()
 		name, err := formatter.parseExpectedName(char)
 		if err != nil {
 			return nil, err
@@ -111,7 +111,7 @@ func (formatter *StringFormatter) parseExpansion() (Segment, error) {
 		return &LiteralNode{Contents: "${}"}, nil
 	}
 
-	formatter.reader.ContextBookmark()
+	formatter.reader.MarkSegment()
 	name, err := formatter.parseExpectedName(char)
 	if err != nil {
 		return nil, err
@@ -133,7 +133,7 @@ func (formatter *StringFormatter) parseExpansion() (Segment, error) {
 			is_optional = true
 
 		case ':':
-			formatter.reader.ContextBookmark()
+			formatter.reader.MarkSegment()
 			format, args, err := formatter.parseFormat()
 			if err != nil && err != io.EOF {
 				return nil, err
@@ -162,7 +162,7 @@ func (formatter *StringFormatter) parseExpansion() (Segment, error) {
 }
 
 func (formatter *StringFormatter) parseFormat() (string, []string, error) {
-	formatter.reader.ContextBookmark()
+	formatter.reader.MarkSegment()
 	name, err := formatter.parseName()
 	if err != nil {
 		return "", nil, err
@@ -179,7 +179,7 @@ func (formatter *StringFormatter) parseFormat() (string, []string, error) {
 		switch char {
 
 		case ' ':
-			formatter.reader.ContextBookmark()
+			formatter.reader.MarkSegment()
 			arg, err := formatter.parseName()
 			if err != nil {
 				return name, nil, err
@@ -199,7 +199,7 @@ func (formatter *StringFormatter) parseFormat() (string, []string, error) {
 }
 
 func (formatter *StringFormatter) parseExpectedName(first_char rune) (string, error) {
-	if !internal.NameCharset(first_char) {
+	if !readers.NameCharset(first_char) {
 		return "", fmt.Errorf("unexpected character %q", first_char)
 	}
 
@@ -218,7 +218,7 @@ func (formatter *StringFormatter) parseName() (string, error) {
 			return "", err
 		}
 
-		if internal.NameCharset(char) {
+		if readers.NameCharset(char) {
 			builder.WriteRune(char)
 		} else {
 			formatter.reader.Unread()
