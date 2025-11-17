@@ -4,6 +4,7 @@ import (
 	"errors"
 	"slices"
 	"strings"
+	"unicode"
 )
 
 type CharsetComparator func(rune) bool
@@ -33,14 +34,7 @@ func QuotesCharset(in rune) bool {
 }
 
 func WhitespaceCharset(in rune) bool {
-	return in == '\t' ||
-		in == '\n' ||
-		in == '\v' ||
-		in == '\f' ||
-		in == '\r' ||
-		in == ' ' ||
-		in == 0x85 ||
-		in == 0xA0
+	return unicode.IsSpace(in)
 }
 
 func (reader *Reader) ReadSequence(comparator CharsetComparator) (string, error) {
