@@ -55,7 +55,7 @@ func (reader *Reader) ReadSequence(comparator CharsetComparator) (string, error)
 	}
 }
 
-func (reader *Reader) ReadDelimited(delims ...rune) (string, error) {
+func (reader *Reader) ReadDelimited(including bool, delims ...rune) (string, error) {
 	var builder strings.Builder
 
 	for {
@@ -65,7 +65,9 @@ func (reader *Reader) ReadDelimited(delims ...rune) (string, error) {
 		}
 
 		if slices.Contains(delims, char) {
-			reader.Unread()
+			if !including {
+				reader.Unread()
+			}
 			return builder.String(), nil
 		}
 

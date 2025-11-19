@@ -73,11 +73,10 @@ func (parser *Parser) next(container *NodeChildren) *liberrors.DetailedError {
 		return EOS
 
 	case '#':
-		comment, err := parser.reader.ReadDelimited('\n')
+		comment, err := parser.reader.ReadDelimited(true, '\n')
 		if err != nil {
 			return parser.failReading(err)
 		}
-		parser.reader.Inner.ReadRune() // Consume the \n character
 		return parser.write(container, &CommentNode{Contents: comment})
 
 	case ':':
@@ -365,7 +364,7 @@ func (parser *Parser) readFilename() (Node, *liberrors.DetailedError) {
 
 	case readers.FilenameCharset(char):
 		builder.WriteRune(char)
-		word, err := parser.reader.ReadDelimited('\n', ' ')
+		word, err := parser.reader.ReadDelimited(false, '\n', ' ')
 		if err != nil {
 			return nil, parser.failReading(err)
 		}
