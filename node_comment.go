@@ -2,15 +2,15 @@ package libparser
 
 import "fmt"
 
-// Can be used for documentation
-type CommentNode struct {
+type NodeComment struct {
 	Contents string
+	NodeContext
 }
 
-func (node *CommentNode) Node() string {
+func (node *NodeComment) Context() NodeContext {
+	return node.NodeContext
+}
+
+func (node *NodeComment) String() string {
 	return fmt.Sprintf("#%s", node.Contents)
-}
-
-func (node *CommentNode) String() string {
-	return node.Node()
 }

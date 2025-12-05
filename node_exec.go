@@ -1,18 +1,16 @@
 package libparser
 
-import "fmt"
-
-// An executable external program
-type ExecNode struct {
-	Binary string
-
+type NodeExec struct {
+	Name string
+	NodeContext
 	NodeArgs
 }
 
-func (node *ExecNode) Node() string {
-	return fmt.Sprintf("%s%s", node.Binary, node.NodeArgs)
+func (node *NodeExec) Context() NodeContext {
+	return node.NodeContext
 }
 
-func (node *ExecNode) String() string {
-	return node.Node()
+func (node *NodeExec) String() string {
+	return node.Name +
+		node.NodeArgs.String()
 }

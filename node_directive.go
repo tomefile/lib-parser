@@ -1,18 +1,19 @@
 package libparser
 
-import "fmt"
-
-type DirectiveNode struct {
+type NodeDirective struct {
 	Name string
-
+	NodeContext
 	NodeArgs
 	NodeChildren
 }
 
-func (node *DirectiveNode) Node() string {
-	return fmt.Sprintf(":%s%s%s", node.Name, node.NodeArgs, node.NodeChildren)
+func (node *NodeDirective) Context() NodeContext {
+	return node.NodeContext
 }
 
-func (node *DirectiveNode) String() string {
-	return node.Node()
+func (node *NodeDirective) String() string {
+	return ":" +
+		node.Name +
+		node.NodeArgs.String() +
+		node.NodeChildren.String()
 }

@@ -1,78 +1,37 @@
 package libparser
 
-import "fmt"
+import "strings"
 
-type RedirectType byte
+type NodeRedirectOut struct {
+	Source    Node
+	Filenames []*NodeString
+	NodeContext
+}
 
-const (
-	REDIRECT_STDOUT RedirectType = iota
-	REDIRECT_STDERR
-	REDIRECT_STDIN
-	REDIRECT_HEREDOC
-	REDIRECT_HERESTR
-)
+func (node *NodeRedirectOut) Context() NodeContext {
+	return node.NodeContext
+}
 
-type RedirectNode struct {
-	Type   RedirectType
-	Source Node
+func (node *NodeRedirectOut) String() string {
+	var builder strings.Builder
+	for _, filename := range node.Filenames {
+		builder.WriteString(" > " + filename.String())
+	}
+	return node.Source.String() + builder.String()
+}
+
+// ————————————————————————————————
+
+type NodeHereString struct {
+	Source *NodeString
 	Dest   Node
+	NodeContext
 }
 
-func (node *RedirectNode) Node() string {
-	switch node.Type {
-	case REDIRECT_STDOUT:
-		// [source] %s [dest]
-		return fmt.Sprintf(
-			"%s %s %s",
-			node.Source.Node(),
-			node.Type.String(),
-			node.Dest.Node(),
-		)
-	default:
-		// [dest] %s [source]
-		return fmt.Sprintf(
-			"%s %s %s",
-			node.Dest.Node(),
-			node.Type.String(),
-			node.Source.Node(),
-		)
-	}
+func (node *NodeHereString) Context() NodeContext {
+	return node.NodeContext
 }
 
-func (node *RedirectNode) String() string {
-	return node.Node()
-}
-
-func (node RedirectType) String() string {
-	switch node {
-	case REDIRECT_HEREDOC:
-		return "<<"
-	case REDIRECT_HERESTR:
-		return "<<<"
-	case REDIRECT_STDIN:
-		return "<"
-	case REDIRECT_STDOUT:
-		return ">"
-	}
-
-	return ""
-}
-
-type ChildRedirectNode struct {
-	Source  Node
-	OutDest Node
-	ErrDest Node
-}
-
-func (node *ChildRedirectNode) Node() string {
-	return fmt.Sprintf(
-		"%s > %s >> %s",
-		node.Source.Node(),
-		node.OutDest.Node(),
-		node.ErrDest.Node(),
-	)
-}
-
-func (node *ChildRedirectNode) String() string {
-	return node.Node()
+func (node *NodeHereString) String() string {
+	return node.Dest.String() + " << " + node.Source.String()
 }

@@ -1,18 +1,16 @@
 package libparser
 
-import "fmt"
-
-// An executable external program
-type CallNode struct {
+type NodeCall struct {
 	Macro string
-
+	NodeContext
 	NodeArgs
 }
 
-func (node *CallNode) Node() string {
-	return fmt.Sprintf("%s!%s", node.Macro, node.NodeArgs)
+func (node *NodeCall) Context() NodeContext {
+	return node.NodeContext
 }
 
-func (node *CallNode) String() string {
-	return node.Node()
+func (node *NodeCall) String() string {
+	return node.Macro + "!" +
+		node.NodeArgs.String()
 }

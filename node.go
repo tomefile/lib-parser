@@ -1,28 +1,42 @@
 package libparser
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 type Node interface {
-	Node() string
+	Context() NodeContext
+	String() string
 }
 
-type NodeTree struct {
-	Tomes map[string]Node
+// ————————————————————————————————
 
+type NodeRoot struct {
+	Tomes map[string]Node
+	NodeContext
 	NodeChildren
 }
 
-type NodeArgs []Node
-
-func (args NodeArgs) String() string {
-	var builder strings.Builder
-
-	for _, arg := range args {
-		builder.WriteString(" " + arg.Node())
-	}
-
-	return builder.String()
+func (node *NodeRoot) Context() NodeContext {
+	return node.NodeContext
 }
+
+func (node *NodeRoot) String() string {
+	return node.NodeChildren.String()
+}
+
+// ————————————————————————————————
+
+type NodeContext struct {
+	OffsetStart, OffsetEnd uint
+}
+
+func (context NodeContext) String() string {
+	return fmt.Sprintf("[%d-%d]", context.OffsetStart, context.OffsetEnd)
+}
+
+// ————————————————————————————————
 
 type NodeChildren []Node
 
@@ -35,9 +49,23 @@ func (children NodeChildren) String() string {
 	builder.WriteString(" {\n")
 
 	for _, arg := range children {
-		builder.WriteString("--- " + arg.Node() + "\n")
+		builder.WriteString("--- " + arg.String() + "\n")
 	}
 
 	builder.WriteString("}")
+	return builder.String()
+}
+
+// ————————————————————————————————
+
+type NodeArgs []Node
+
+func (args NodeArgs) String() string {
+	var builder strings.Builder
+
+	for _, arg := range args {
+		builder.WriteString(" " + arg.String())
+	}
+
 	return builder.String()
 }
