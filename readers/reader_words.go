@@ -37,6 +37,18 @@ func WhitespaceCharset(in rune) bool {
 	return unicode.IsSpace(in)
 }
 
+func ArglistTeminatingCharset(in rune) bool {
+	return WhitespaceCharset(in) ||
+		in == ';' ||
+		in == '|' ||
+		in == '>' ||
+		in == '<' ||
+		in == '(' ||
+		in == ')' ||
+		in == '{' ||
+		in == '}'
+}
+
 func (reader *Reader) ReadSequence(comparator CharsetComparator) (string, error) {
 	var builder strings.Builder
 

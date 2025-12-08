@@ -7,38 +7,34 @@ import (
 	liberrors "github.com/tomefile/lib-errors"
 )
 
-// End of File
-var EOF = &liberrors.DetailedError{Name: "EOF"}
+var EOF = &liberrors.DetailedError{Name: "EOF", Details: "End of File"}
 
-// Unexpected End of File
-var UNEXPECTED_EOF = &liberrors.DetailedError{
-	Name:    liberrors.ERROR_READING,
-	Details: "unexpected EOF when expecting a '}'",
-}
+var UNEXPECTED_EOF = &liberrors.DetailedError{Name: "EOF", Details: "Unexpected End of File"}
 
-// End of Section
-var EOS = &liberrors.DetailedError{Name: "EOS"}
+var EOB = &liberrors.DetailedError{Name: "EOB", Details: "End of Block"}
 
-func (parser *Parser) fillTrace(out *liberrors.DetailedError) {
-	out.AddTraceItem(liberrors.TraceItem{
-		Name: parser.Name,
+var EOA = &liberrors.DetailedError{Name: "EOA", Details: "End of Arguments"}
+
+func (parser *Parser) fillErrorTrace(derr *liberrors.DetailedError) {
+	derr.AddTraceItem(liberrors.TraceItem{
+		Name: parser.File.Name(),
 		Col:  parser.reader.PrevCol,
 		Row:  parser.reader.PrevRow,
 	})
-	if parser.parent != nil {
-		parser.parent.fillTrace(out)
+	if parser.Parent != nil {
+		parser.Parent.fillErrorTrace(derr)
 	}
 }
 
-func (parser *Parser) fail(name, details string) *liberrors.DetailedError {
+func (parser *Parser) fail(at uint, name, details string) *liberrors.DetailedError {
 	derr := &liberrors.DetailedError{
 		Name:    name,
 		Details: details,
 		Trace:   nil,
-		Context: parser.reader.Context(),
+		Context: parser.reader.Context(at),
 	}
 
-	parser.fillTrace(derr)
+	parser.fillErrorTrace(derr)
 	return derr
 }
 
@@ -51,9 +47,13 @@ func (parser *Parser) failReading(err error) *liberrors.DetailedError {
 		return derr
 	}
 
-	return parser.fail(liberrors.ERROR_READING, err.Error())
+	return parser.fail(parser.reader.Offset-1, liberrors.ERROR_READING, err.Error())
 }
 
-func (parser *Parser) failSyntax(format string, args ...any) *liberrors.DetailedError {
-	return parser.fail(liberrors.ERROR_SYNTAX, fmt.Sprintf(format, args...))
+func (parser *Parser) failSyntax(at uint, format string, args ...any) *liberrors.DetailedError {
+	return parser.fail(at, liberrors.ERROR_SYNTAX, fmt.Sprintf(format, args...))
+}
+
+func (parser *Parser) failSyntaxHere(format string, args ...any) *liberrors.DetailedError {
+	return parser.failSyntax(parser.reader.Offset-1, format, args...)
 }

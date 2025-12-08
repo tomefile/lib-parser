@@ -1,6 +1,7 @@
 package libparser
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 )
@@ -32,6 +33,65 @@ func (modifier StringModifier) String() string {
 	}
 
 	return fmt.Sprintf("%s %s", modifier.Name, strings.Join(modifier.Args, " "))
+}
+
+func (modifier StringModifier) MarshalJSON() ([]byte, error) {
+	return json.Marshal(fmt.Sprintf("%s(%s)", modifier.Name, strings.Join(modifier.Args, " ")))
+}
+
+// ————————————————————————————————
+
+func SortModifiers(modifiers []StringModifier) []StringModifier {
+	var output = make([]StringModifier, len(modifiers))
+	i := 0
+	j := len(output) - 1
+	for _, modifier := range modifiers {
+		// Put all "not" modifiers to the end
+		if modifier.Name == "not" {
+			output[j] = modifier
+			j--
+		} else {
+			output[i] = modifier
+			i++
+		}
+	}
+	return output
+}
+
+func (parser *Parser) GetModifier(tokens []string) (StringModifier, error) {
+	mod := StringModifier{
+		Name: tokens[0],
+		Args: tokens[1:],
+		Call: nil,
+	}
+
+	switch mod.Name {
+
+	case "not":
+		mod.Call = func(in string) string {
+			switch in {
+			case "0", "false", "FALSE":
+				return "1"
+			default:
+				return "0"
+			}
+		}
+
+	case "to_lower":
+		mod.Call = strings.ToLower
+
+	case "to_upper":
+		mod.Call = strings.ToUpper
+
+	default:
+		return mod, fmt.Errorf(
+			"unknown string expansion modifier %q with parameters %q",
+			mod.Name,
+			mod.Args,
+		)
+	}
+
+	return mod, nil
 }
 
 // ————————————————————————————————
@@ -113,4 +173,13 @@ func (segment *VariableStringSegment) Eval(locals Locals) (string, error) {
 	}
 
 	return value, nil
+}
+
+// ————————————————————————————————
+
+func ParseString(in string) SegmentedString {
+	// TODO: add string parsing
+	out := SegmentedString{}
+	out = append(out, &LiteralStringSegment{in})
+	return out
 }

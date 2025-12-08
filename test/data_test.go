@@ -4,29 +4,45 @@ import libparser "github.com/tomefile/lib-parser"
 
 type DataTestCase struct {
 	Filename string
-	Expect   *libparser.NodeTree
+	Expect   *libparser.NodeRoot
 }
 
 var ExpectedData = []DataTestCase{
 	{
 		Filename: "01_basic.tome",
-		Expect: &libparser.NodeTree{
+		Expect: &libparser.NodeRoot{
 			Tomes: map[string]libparser.Node{},
 			NodeChildren: libparser.NodeChildren{
-				&libparser.CommentNode{Contents: " Example program, привет мир 👨‍🚀!"},
-				&libparser.DirectiveNode{
+				&libparser.NodeComment{Contents: " Example program, привет мир 👨‍🚀!"},
+				&libparser.NodeDirective{
 					Name: "include",
 					NodeArgs: libparser.NodeArgs{
-						&libparser.StringNode{Contents: "@std"},
+						&libparser.NodeString{
+							Segments: libparser.SegmentedString{
+								&libparser.LiteralStringSegment{Contents: "@std"},
+							},
+						},
 					},
 					NodeChildren: libparser.NodeChildren{},
 				},
-				&libparser.ExecNode{
-					Binary: "echo",
+				&libparser.NodeExec{
+					Name: "echo",
 					NodeArgs: libparser.NodeArgs{
-						&libparser.StringNode{Contents: "Hello World!"},
-						&libparser.StringNode{Contents: "and another line"},
-						&libparser.StringNode{Contents: "and another."},
+						&libparser.NodeString{
+							Segments: libparser.SegmentedString{
+								&libparser.LiteralStringSegment{Contents: "Hello World!"},
+							},
+						},
+						&libparser.NodeString{
+							Segments: libparser.SegmentedString{
+								&libparser.LiteralStringSegment{Contents: "and another line"},
+							},
+						},
+						&libparser.NodeString{
+							Segments: libparser.SegmentedString{
+								&libparser.LiteralStringSegment{Contents: "and another."},
+							},
+						},
 					},
 				},
 			},
@@ -34,31 +50,43 @@ var ExpectedData = []DataTestCase{
 	},
 	{
 		Filename: "02_directive_body.tome",
-		Expect: &libparser.NodeTree{
+		Expect: &libparser.NodeRoot{
 			Tomes: map[string]libparser.Node{},
 			NodeChildren: libparser.NodeChildren{
-				&libparser.ExecNode{
-					Binary: "echo",
+				&libparser.NodeExec{
+					Name: "echo",
 					NodeArgs: libparser.NodeArgs{
-						&libparser.StringNode{Contents: "1"},
-					},
-				},
-				&libparser.DirectiveNode{
-					Name: "section",
-					NodeArgs: libparser.NodeArgs{
-						&libparser.StringNode{Contents: "Hello World!"},
-					},
-					NodeChildren: libparser.NodeChildren{
-						&libparser.ExecNode{
-							Binary: "echo",
-							NodeArgs: libparser.NodeArgs{
-								&libparser.LiteralNode{Contents: "1.1"},
+						&libparser.NodeString{
+							Segments: libparser.SegmentedString{
+								&libparser.LiteralStringSegment{Contents: "1"},
 							},
 						},
-						&libparser.ExecNode{
-							Binary: "echo",
+					},
+				},
+				&libparser.NodeDirective{
+					Name: "section",
+					NodeArgs: libparser.NodeArgs{
+						&libparser.NodeString{
+							Segments: libparser.SegmentedString{
+								&libparser.LiteralStringSegment{Contents: "Hello World!"},
+							},
+						},
+					},
+					NodeChildren: libparser.NodeChildren{
+						&libparser.NodeExec{
+							Name: "echo",
 							NodeArgs: libparser.NodeArgs{
-								&libparser.StringNode{Contents: "1.2"},
+								&libparser.NodeLiteral{Contents: "1.1"},
+							},
+						},
+						&libparser.NodeExec{
+							Name: "echo",
+							NodeArgs: libparser.NodeArgs{
+								&libparser.NodeString{
+									Segments: libparser.SegmentedString{
+										&libparser.LiteralStringSegment{Contents: "1.2"},
+									},
+								},
 							},
 						},
 					},
@@ -68,58 +96,86 @@ var ExpectedData = []DataTestCase{
 	},
 	{
 		Filename: "03_directive_nested.tome",
-		Expect: &libparser.NodeTree{
+		Expect: &libparser.NodeRoot{
 			Tomes: map[string]libparser.Node{},
 			NodeChildren: libparser.NodeChildren{
-				&libparser.ExecNode{
-					Binary: "echo",
+				&libparser.NodeExec{
+					Name: "echo",
 					NodeArgs: libparser.NodeArgs{
-						&libparser.StringNode{Contents: "1"},
+						&libparser.NodeString{
+							Segments: libparser.SegmentedString{
+								&libparser.LiteralStringSegment{Contents: "1"},
+							},
+						},
 					},
 				},
-				&libparser.DirectiveNode{
+				&libparser.NodeDirective{
 					Name: "section",
 					NodeArgs: libparser.NodeArgs{
-						&libparser.StringNode{Contents: "Hello World!"},
+						&libparser.NodeString{
+							Segments: libparser.SegmentedString{
+								&libparser.LiteralStringSegment{Contents: "Hello World!"},
+							},
+						},
 					},
 					NodeChildren: libparser.NodeChildren{
-						&libparser.ExecNode{
-							Binary: "echo",
+						&libparser.NodeExec{
+							Name: "echo",
 							NodeArgs: libparser.NodeArgs{
-								&libparser.StringNode{Contents: "1.1"},
+								&libparser.NodeLiteral{Contents: "1.1"},
 							},
 						},
-						&libparser.ExecNode{
-							Binary: "echo",
+						&libparser.NodeExec{
+							Name: "echo",
 							NodeArgs: libparser.NodeArgs{
-								&libparser.StringNode{Contents: "1.2"},
+								&libparser.NodeString{
+									Segments: libparser.SegmentedString{
+										&libparser.LiteralStringSegment{Contents: "1.2"},
+									},
+								},
 							},
 						},
-						&libparser.DirectiveNode{
+						&libparser.NodeDirective{
 							Name: "section",
 							NodeArgs: libparser.NodeArgs{
-								&libparser.StringNode{Contents: "Nested"},
-							},
-							NodeChildren: libparser.NodeChildren{
-								&libparser.CommentNode{Contents: " This is nested inside"},
-								&libparser.ExecNode{
-									Binary: "echo",
-									NodeArgs: libparser.NodeArgs{
-										&libparser.StringNode{Contents: "2.1"},
+								&libparser.NodeString{
+									Segments: libparser.SegmentedString{
+										&libparser.LiteralStringSegment{Contents: "Nested"},
 									},
 								},
-								&libparser.ExecNode{
-									Binary: "echo",
+							},
+							NodeChildren: libparser.NodeChildren{
+								&libparser.NodeComment{Contents: " This is nested inside"},
+								&libparser.NodeExec{
+									Name: "echo",
 									NodeArgs: libparser.NodeArgs{
-										&libparser.StringNode{Contents: "2.2"},
+										&libparser.NodeString{
+											Segments: libparser.SegmentedString{
+												&libparser.LiteralStringSegment{Contents: "2.1"},
+											},
+										},
+									},
+								},
+								&libparser.NodeExec{
+									Name: "echo",
+									NodeArgs: libparser.NodeArgs{
+										&libparser.NodeString{
+											Segments: libparser.SegmentedString{
+												&libparser.LiteralStringSegment{Contents: "2.2"},
+											},
+										},
 									},
 								},
 							},
 						},
-						&libparser.ExecNode{
-							Binary: "echo",
+						&libparser.NodeExec{
+							Name: "echo",
 							NodeArgs: libparser.NodeArgs{
-								&libparser.StringNode{Contents: "1.3"},
+								&libparser.NodeString{
+									Segments: libparser.SegmentedString{
+										&libparser.LiteralStringSegment{Contents: "1.3"},
+									},
+								},
 							},
 						},
 					},
@@ -129,21 +185,41 @@ var ExpectedData = []DataTestCase{
 	},
 	{
 		Filename: "04_subcommand.tome",
-		Expect: &libparser.NodeTree{
+		Expect: &libparser.NodeRoot{
 			Tomes: map[string]libparser.Node{},
 			NodeChildren: libparser.NodeChildren{
-				&libparser.CallNode{
+				&libparser.NodeCall{
 					Macro: "my_macro",
 					NodeArgs: libparser.NodeArgs{
-						&libparser.StringNode{Contents: "123"},
-						&libparser.ExecNode{
-							Binary: "readlink",
-							NodeArgs: libparser.NodeArgs{
-								&libparser.StringNode{Contents: "-p"},
-								&libparser.StringNode{Contents: "$MY_LINK"},
+						&libparser.NodeString{
+							Segments: libparser.SegmentedString{
+								&libparser.LiteralStringSegment{Contents: "123"},
 							},
 						},
-						&libparser.StringNode{Contents: "456"},
+						&libparser.NodeExec{
+							Name: "readlink",
+							NodeArgs: libparser.NodeArgs{
+								&libparser.NodeString{
+									Segments: libparser.SegmentedString{
+										&libparser.LiteralStringSegment{Contents: "-p"},
+									},
+								},
+								&libparser.NodeString{
+									Segments: libparser.SegmentedString{
+										&libparser.VariableStringSegment{
+											Name:       "MY_LINK",
+											Modifiers:  []libparser.StringModifier{},
+											IsOptional: false,
+										},
+									},
+								},
+							},
+						},
+						&libparser.NodeString{
+							Segments: libparser.SegmentedString{
+								&libparser.LiteralStringSegment{Contents: "456"},
+							},
+						},
 					},
 				},
 			},
@@ -151,43 +227,67 @@ var ExpectedData = []DataTestCase{
 	},
 	{
 		Filename: "05_tomes.tome",
-		Expect: &libparser.NodeTree{
+		Expect: &libparser.NodeRoot{
 			Tomes: map[string]libparser.Node{
 				"first":  nil,
 				"second": nil,
 			},
 			NodeChildren: libparser.NodeChildren{
-				&libparser.ExecNode{
-					Binary: "echo",
+				&libparser.NodeExec{
+					Name: "echo",
 					NodeArgs: libparser.NodeArgs{
-						&libparser.StringNode{Contents: "0"},
-					},
-				},
-				&libparser.DirectiveNode{
-					Name: "tome",
-					NodeArgs: libparser.NodeArgs{
-						&libparser.StringNode{Contents: "first"},
-					},
-					NodeChildren: libparser.NodeChildren{
-						&libparser.ExecNode{
-							Binary: "echo",
-							NodeArgs: libparser.NodeArgs{
-								&libparser.StringNode{Contents: "1.1"},
+						&libparser.NodeString{
+							Segments: libparser.SegmentedString{
+								&libparser.LiteralStringSegment{Contents: "0"},
 							},
 						},
 					},
 				},
-				&libparser.DirectiveNode{
+				&libparser.NodeDirective{
 					Name: "tome",
 					NodeArgs: libparser.NodeArgs{
-						&libparser.StringNode{Contents: "second"},
-						&libparser.StringNode{Contents: "With a description"},
+						&libparser.NodeString{
+							Segments: libparser.SegmentedString{
+								&libparser.LiteralStringSegment{Contents: "first"},
+							},
+						},
 					},
 					NodeChildren: libparser.NodeChildren{
-						&libparser.ExecNode{
-							Binary: "echo",
+						&libparser.NodeExec{
+							Name: "echo",
 							NodeArgs: libparser.NodeArgs{
-								&libparser.StringNode{Contents: "2.1"},
+								&libparser.NodeString{
+									Segments: libparser.SegmentedString{
+										&libparser.LiteralStringSegment{Contents: "1.1"},
+									},
+								},
+							},
+						},
+					},
+				},
+				&libparser.NodeDirective{
+					Name: "tome",
+					NodeArgs: libparser.NodeArgs{
+						&libparser.NodeString{
+							Segments: libparser.SegmentedString{
+								&libparser.LiteralStringSegment{Contents: "second"},
+							},
+						},
+						&libparser.NodeString{
+							Segments: libparser.SegmentedString{
+								&libparser.LiteralStringSegment{Contents: "With a description"},
+							},
+						},
+					},
+					NodeChildren: libparser.NodeChildren{
+						&libparser.NodeExec{
+							Name: "echo",
+							NodeArgs: libparser.NodeArgs{
+								&libparser.NodeString{
+									Segments: libparser.SegmentedString{
+										&libparser.LiteralStringSegment{Contents: "2.1"},
+									},
+								},
 							},
 						},
 					},
@@ -197,31 +297,47 @@ var ExpectedData = []DataTestCase{
 	},
 	{
 		Filename: "06_semicolon.tome",
-		Expect: &libparser.NodeTree{
+		Expect: &libparser.NodeRoot{
 			Tomes: map[string]libparser.Node{},
 			NodeChildren: libparser.NodeChildren{
-				&libparser.ExecNode{
-					Binary: "echo",
+				&libparser.NodeExec{
+					Name: "echo",
 					NodeArgs: libparser.NodeArgs{
-						&libparser.StringNode{Contents: "1"},
+						&libparser.NodeString{
+							Segments: libparser.SegmentedString{
+								&libparser.LiteralStringSegment{Contents: "1"},
+							},
+						},
 					},
 				},
-				&libparser.ExecNode{
-					Binary: "echo",
+				&libparser.NodeExec{
+					Name: "echo",
 					NodeArgs: libparser.NodeArgs{
-						&libparser.StringNode{Contents: "2"},
+						&libparser.NodeString{
+							Segments: libparser.SegmentedString{
+								&libparser.LiteralStringSegment{Contents: "2"},
+							},
+						},
 					},
 				},
-				&libparser.ExecNode{
-					Binary: "echo",
+				&libparser.NodeExec{
+					Name: "echo",
 					NodeArgs: libparser.NodeArgs{
-						&libparser.StringNode{Contents: "3"},
+						&libparser.NodeString{
+							Segments: libparser.SegmentedString{
+								&libparser.LiteralStringSegment{Contents: "3"},
+							},
+						},
 					},
 				},
-				&libparser.ExecNode{
-					Binary: "echo",
+				&libparser.NodeExec{
+					Name: "echo",
 					NodeArgs: libparser.NodeArgs{
-						&libparser.StringNode{Contents: "4"},
+						&libparser.NodeString{
+							Segments: libparser.SegmentedString{
+								&libparser.LiteralStringSegment{Contents: "4"},
+							},
+						},
 					},
 				},
 			},
@@ -229,48 +345,76 @@ var ExpectedData = []DataTestCase{
 	},
 	{
 		Filename: "07_pipes.tome",
-		Expect: &libparser.NodeTree{
+		Expect: &libparser.NodeRoot{
 			Tomes: map[string]libparser.Node{},
 			NodeChildren: libparser.NodeChildren{
-				&libparser.PipeNode{
-					Source: &libparser.ExecNode{
-						Binary: "echo",
+				&libparser.NodePipe{
+					Source: &libparser.NodeExec{
+						Name: "echo",
 						NodeArgs: libparser.NodeArgs{
-							&libparser.StringNode{Contents: "-e"},
-							&libparser.StringNode{Contents: `Hello World!\n`},
+							&libparser.NodeString{
+								Segments: libparser.SegmentedString{
+									&libparser.LiteralStringSegment{Contents: "-e"},
+								},
+							},
+							&libparser.NodeString{
+								Segments: libparser.SegmentedString{
+									&libparser.LiteralStringSegment{Contents: `Hello World!\n`},
+								},
+							},
 						},
 					},
-					Dest: &libparser.ExecNode{
-						Binary: "bat",
+					Dest: &libparser.NodeExec{
+						Name: "bat",
 						NodeArgs: libparser.NodeArgs{
-							&libparser.StringNode{Contents: "--lang"},
-							&libparser.StringNode{Contents: "html"},
+							&libparser.NodeString{
+								Segments: libparser.SegmentedString{
+									&libparser.LiteralStringSegment{Contents: "--lang"},
+								},
+							},
+							&libparser.NodeString{
+								Segments: libparser.SegmentedString{
+									&libparser.LiteralStringSegment{Contents: "html"},
+								},
+							},
 						},
 					},
 				},
-				&libparser.PipeNode{
-					Source: &libparser.ExecNode{
-						Binary: "echo",
+				&libparser.NodePipe{
+					Source: &libparser.NodeExec{
+						Name: "echo",
 						NodeArgs: libparser.NodeArgs{
-							&libparser.StringNode{Contents: "123"},
-						},
-					},
-					Dest: &libparser.PipeNode{
-						Source: &libparser.ExecNode{
-							Binary: "program2",
-							NodeArgs: libparser.NodeArgs{
-								&libparser.StringNode{Contents: "input"},
-							},
-						},
-						Dest: &libparser.PipeNode{
-							Source: &libparser.ExecNode{
-								Binary: "program3",
-								NodeArgs: libparser.NodeArgs{
-									&libparser.StringNode{Contents: "input"},
+							&libparser.NodeString{
+								Segments: libparser.SegmentedString{
+									&libparser.LiteralStringSegment{Contents: "123"},
 								},
 							},
-							Dest: &libparser.ExecNode{
-								Binary:   "bat",
+						},
+					},
+					Dest: &libparser.NodePipe{
+						Source: &libparser.NodeExec{
+							Name: "program2",
+							NodeArgs: libparser.NodeArgs{
+								&libparser.NodeString{
+									Segments: libparser.SegmentedString{
+										&libparser.LiteralStringSegment{Contents: "input"},
+									},
+								},
+							},
+						},
+						Dest: &libparser.NodePipe{
+							Source: &libparser.NodeExec{
+								Name: "program3",
+								NodeArgs: libparser.NodeArgs{
+									&libparser.NodeString{
+										Segments: libparser.SegmentedString{
+											&libparser.LiteralStringSegment{Contents: "input"},
+										},
+									},
+								},
+							},
+							Dest: &libparser.NodeExec{
+								Name:     "bat",
 								NodeArgs: libparser.NodeArgs{},
 							},
 						},

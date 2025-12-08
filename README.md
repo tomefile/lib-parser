@@ -25,6 +25,7 @@ Things that need to be done before `v1`:
 - [ ] Support `&&` and `||` in commands.
 - [x] Pipes `|`.
 - [ ] Redirects `>`, `<`, `>>`, `<<`, `<<<`.
+- [ ] Multi-line arguments `(...)`
 - [ ] Better test coverage
 
 ## Usage
@@ -66,3 +67,5 @@ if derr != nil {
 
 // [segments] is [[]libparser.Segment]
 ```
+
+Add RedirectSource
