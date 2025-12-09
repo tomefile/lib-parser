@@ -18,6 +18,16 @@ func (node *NodeString) String() string {
 	return fmt.Sprintf("\"%s\"", node.Segments.String())
 }
 
+func NewSimpleNodeString(contents string) *NodeString {
+	return &NodeString{
+		Segments: SegmentedString{
+			&LiteralStringSegment{
+				Contents: contents,
+			},
+		},
+	}
+}
+
 // ————————————————————————————————
 
 type StringSegment interface {

@@ -22,7 +22,7 @@ Things that need to be done before `v1`:
 
 - [x] Save context to Nodes and allow for partial parsing.
 - [x] Support for `;` to separate statements.
-- [ ] Support `&&` and `||` in commands.
+- [x] Support `&&` and `||` in commands.
 - [x] Pipes `|`.
 - [x] Redirects `>`, `<`, `>>`, `<<`, `<<<`.
 - [ ] Multi-line arguments `(...)`

@@ -200,16 +200,14 @@ func (parser *Parser) readFilename() (*NodeString, *liberrors.DetailedError) {
 		if err != nil {
 			return nil, parser.failReading(err)
 		}
-		literal := &NodeLiteral{Contents: contents}
-		return literal.ToStringNode(), nil
+		return NewSimpleNodeString(contents), nil
 
 	default:
 		filename, err := parser.reader.ReadSequence(readers.FilenameCharset)
 		if err != nil {
 			return nil, parser.failReading(err)
 		}
-		literal := &NodeLiteral{Contents: filename}
-		return literal.ToStringNode(), nil
+		return NewSimpleNodeString(filename), nil
 	}
 }
 
