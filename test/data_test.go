@@ -423,22 +423,39 @@ var ExpectedData = []DataTestCase{
 			},
 		},
 	},
-	// {
-	// 	Filename: "08_redirects.tome",
-	// 	Expect: &libparser.NodeTree{
-	// 		Tomes: map[string]libparser.Node{},
-	// 		NodeChildren: libparser.NodeChildren{
-	// 			&libparser.RedirectNode{
-	// 				Type: libparser.REDIRECT_STDOUT,
-	// 				Source: &libparser.ExecNode{
-	// 					Binary: "echo",
-	// 					NodeArgs: libparser.NodeArgs{
-	// 						&libparser.StringNode{Contents: "Hello World"},
-	// 					},
-	// 				},
-	// 				Dest: &libparser.StringNode{Contents: "filename.txt"},
-	// 			},
-	// 		},
-	// 	},
-	// },
+	{
+		Filename: "08_redirects.tome",
+		Expect: &libparser.NodeRoot{
+			Tomes: map[string]libparser.Node{},
+			NodeChildren: libparser.NodeChildren{
+				&libparser.NodeRedirect{
+					Source: &libparser.NodePipe{
+						Source: &libparser.NodeExec{
+							Name:     "echo",
+							NodeArgs: libparser.NodeArgs{},
+						},
+						Dest: &libparser.NodeExec{
+							Name:     "bat",
+							NodeArgs: libparser.NodeArgs{},
+						},
+					},
+					Stdin: &libparser.NodeString{
+						Segments: libparser.SegmentedString{
+							&libparser.LiteralStringSegment{Contents: "stdin.txt"},
+						},
+					},
+					Stdout: &libparser.NodeString{
+						Segments: libparser.SegmentedString{
+							&libparser.LiteralStringSegment{Contents: "stdout.txt"},
+						},
+					},
+					Stderr: &libparser.NodeString{
+						Segments: libparser.SegmentedString{
+							&libparser.LiteralStringSegment{Contents: "stderr.txt"},
+						},
+					},
+				},
+			},
+		},
+	},
 }

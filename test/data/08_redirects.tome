@@ -1,1 +1,1 @@
-echo "Hello World" > filename.txt >> errors.txt
+echo | bat < stdin.txt > stdout.txt >> stderr.txt

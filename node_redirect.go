@@ -2,36 +2,28 @@ package libparser
 
 import "strings"
 
-type NodeRedirectOut struct {
-	Source    Node
-	Filenames []*NodeString
+type NodeRedirect struct {
+	Source Node
+	Stdin  *NodeString
+	Stdout *NodeString
+	Stderr *NodeString
 	NodeContext
 }
 
-func (node *NodeRedirectOut) Context() NodeContext {
+func (node *NodeRedirect) Context() NodeContext {
 	return node.NodeContext
 }
 
-func (node *NodeRedirectOut) String() string {
+func (node *NodeRedirect) String() string {
 	var builder strings.Builder
-	for _, filename := range node.Filenames {
-		builder.WriteString(" > " + filename.String())
+	if node.Stdin != nil {
+		builder.WriteString(" <" + node.Stdin.Segments.String())
+	}
+	if node.Stdout != nil {
+		builder.WriteString(" >" + node.Stdout.Segments.String())
+	}
+	if node.Stderr != nil {
+		builder.WriteString(" >>" + node.Stderr.Segments.String())
 	}
 	return node.Source.String() + builder.String()
-}
-
-// ————————————————————————————————
-
-type NodeHereString struct {
-	Source *NodeString
-	Dest   Node
-	NodeContext
-}
-
-func (node *NodeHereString) Context() NodeContext {
-	return node.NodeContext
-}
-
-func (node *NodeHereString) String() string {
-	return node.Dest.String() + " << " + node.Source.String()
 }

@@ -129,7 +129,88 @@ func (parser *Parser) next() *liberrors.DetailedError {
 		return derr
 	}
 
+	peek, _ := parser.reader.Peek()
+	if peek == '>' || peek == '<' {
+		redirection, derr := parser.readRedirection()
+		if derr != nil {
+			return derr
+		}
+		redirection.Source = node
+		redirection.NodeContext = parser.makeContext(start_offset)
+		return parser.write(redirection)
+	}
+
 	return parser.write(node)
+}
+
+func (parser *Parser) readRedirection() (*NodeRedirect, *liberrors.DetailedError) {
+	out := &NodeRedirect{}
+
+	for {
+		char, err := parser.reader.Read()
+		if err != nil {
+			return out, parser.failReading(err)
+		}
+
+		switch char {
+		case '\n':
+			return out, nil
+
+		case '<':
+			filename, derr := parser.readFilename()
+			if derr != nil {
+				return out, derr
+			}
+			out.Stdin = filename
+
+		case '>':
+			char, err := parser.reader.Peek()
+			if err != nil {
+				return nil, parser.failReading(err)
+			}
+			switch char {
+			case '>':
+				parser.reader.Read()
+				filename, derr := parser.readFilename()
+				if derr != nil {
+					return out, derr
+				}
+				out.Stderr = filename
+			default:
+				filename, derr := parser.readFilename()
+				if derr != nil {
+					return out, derr
+				}
+				out.Stdout = filename
+			}
+		}
+	}
+}
+
+func (parser *Parser) readFilename() (*NodeString, *liberrors.DetailedError) {
+	char, err := parser.reader.Read()
+	if err != nil {
+		return nil, parser.failReading(err)
+	}
+
+	switch char {
+
+	case '\'', '"', '`':
+		contents, err := parser.reader.ReadInsideQuotes(char)
+		if err != nil {
+			return nil, parser.failReading(err)
+		}
+		literal := &NodeLiteral{Contents: contents}
+		return literal.ToStringNode(), nil
+
+	default:
+		filename, err := parser.reader.ReadSequence(readers.FilenameCharset)
+		if err != nil {
+			return nil, parser.failReading(err)
+		}
+		literal := &NodeLiteral{Contents: filename}
+		return literal.ToStringNode(), nil
+	}
 }
 
 func (parser *Parser) readStatement() (Node, *liberrors.DetailedError) {
