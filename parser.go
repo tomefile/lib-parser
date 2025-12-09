@@ -388,7 +388,8 @@ func (parser *Parser) readVariableExpansion() (*VariableStringSegment, *liberror
 		if err != nil {
 			return nil, parser.failReading(err)
 		}
-		modifier, err := parser.GetModifier(strings.Split(modifier_string, " "))
+		parts := strings.Split(modifier_string, " ")
+		modifier, err := GetModifier(ModifierName(parts[0]), parts[1:])
 		if err != nil {
 			return nil, parser.fail(
 				modifier_offset_start,
@@ -402,7 +403,7 @@ func (parser *Parser) readVariableExpansion() (*VariableStringSegment, *liberror
 		if char == '}' {
 			return &VariableStringSegment{
 				Name:       name,
-				Modifiers:  SortModifiers(modifiers),
+				Modifiers:  SortNotModifierToEnd(modifiers),
 				IsOptional: optional,
 			}, nil
 		}
