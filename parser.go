@@ -245,7 +245,7 @@ func (parser *Parser) readArg() (Node, *liberrors.DetailedError) {
 
 		if char != '$' {
 			if char == '\'' || char == '"' || char == '`' {
-				contents, err := parser.reader.ReadDelimited(true, char)
+				contents, err := parser.reader.ReadInsideQuotes(char)
 				if err != nil {
 					return nil, parser.failReading(err)
 				}
