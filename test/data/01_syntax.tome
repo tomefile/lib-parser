@@ -1,0 +1,17 @@
+#!/bin/tome
+# Example program, привет мир 👨‍🚀!
+:include @std
+
+echo "Hello World!" \
+	"and another line" \
+	"and another."
+
+:section $(echo /tmp/filename.png) 'Some literal string' {
+	:assert ${build_dir?:not:is_dir}
+	:for $file = $in_dir/$pattern.json.patch {
+		patch -s \
+			-o /tmp/patched-file.json \
+			$(realpath ../something/something/$basename) \
+			$file >  /some/output
+	}
+}

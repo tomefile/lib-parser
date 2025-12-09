@@ -8,11 +8,17 @@ import (
 	"testing"
 
 	libescapes "github.com/bbfh-dev/lib-ansi-escapes"
+	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	liberrors "github.com/tomefile/lib-errors"
 	libparser "github.com/tomefile/lib-parser"
 	"gotest.tools/assert"
 )
+
+var IgnoredOptions = []cmp.Option{
+	cmpopts.IgnoreTypes(libparser.NodeContext{}),
+	cmpopts.IgnoreFields(libparser.StringModifier{}, "Call"),
+}
 
 func TestAll(test *testing.T) {
 	defer libparser.CloseAll()
@@ -48,8 +54,7 @@ func TestAll(test *testing.T) {
 				test,
 				test_case.Expect.NodeChildren,
 				tree.NodeChildren,
-				cmpopts.IgnoreTypes(libparser.NodeContext{}),
-			)
+				IgnoredOptions...)
 			for key := range tree.Tomes {
 				// We don't care about what it points to, just that it exists.
 				tree.Tomes[key] = nil
@@ -92,5 +97,5 @@ func TestPostProcessor(test *testing.T) {
 		&libparser.NodeComment{
 			Contents: message,
 		},
-	}, cmpopts.IgnoreTypes(libparser.NodeContext{}))
+	}, IgnoredOptions...)
 }

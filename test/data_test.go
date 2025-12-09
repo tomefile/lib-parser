@@ -9,7 +9,7 @@ type DataTestCase struct {
 
 var ExpectedData = []DataTestCase{
 	{
-		Filename: "01_basic.tome",
+		Filename: "01_syntax.tome",
 		Expect: &libparser.NodeRoot{
 			Tomes: map[string]libparser.Node{},
 			NodeChildren: libparser.NodeChildren{
@@ -33,11 +33,105 @@ var ExpectedData = []DataTestCase{
 					Name: "section",
 					NodeArgs: libparser.NodeArgs{
 						&libparser.NodeExec{
-							Name:     "echo",
-							NodeArgs: libparser.NodeArgs{},
+							Name: "echo",
+							NodeArgs: libparser.NodeArgs{
+								libparser.NewSimpleNodeString("/tmp/filename.png"),
+							},
+						},
+						&libparser.NodeLiteral{
+							Contents: "Some literal string",
 						},
 					},
-					NodeChildren: libparser.NodeChildren{},
+					NodeChildren: libparser.NodeChildren{
+						&libparser.NodeDirective{
+							Name: "assert",
+							NodeArgs: libparser.NodeArgs{
+								&libparser.NodeString{
+									Segments: libparser.SegmentedString{
+										&libparser.VariableStringSegment{
+											Name: "build_dir",
+											Modifiers: []libparser.StringModifier{
+												getModifierSafe(libparser.MOD_IS_DIR),
+												getModifierSafe(libparser.MOD_NOT),
+											},
+											IsOptional: true,
+										},
+									},
+								},
+							},
+							NodeChildren: libparser.NodeChildren{},
+						},
+						&libparser.NodeDirective{
+							Name: "for",
+							NodeArgs: libparser.NodeArgs{
+								&libparser.NodeString{
+									Segments: libparser.SegmentedString{
+										&libparser.VariableStringSegment{
+											Name:       "file",
+											Modifiers:  []libparser.StringModifier{},
+											IsOptional: false,
+										},
+									},
+								},
+								libparser.NewSimpleNodeString("="),
+								&libparser.NodeString{
+									Segments: libparser.SegmentedString{
+										&libparser.VariableStringSegment{
+											Name:       "in_dir",
+											Modifiers:  []libparser.StringModifier{},
+											IsOptional: false,
+										},
+										&libparser.LiteralStringSegment{Contents: "/"},
+										&libparser.VariableStringSegment{
+											Name:       "pattern",
+											Modifiers:  []libparser.StringModifier{},
+											IsOptional: false,
+										},
+										&libparser.LiteralStringSegment{Contents: ".json.patch"},
+									},
+								},
+							},
+							NodeChildren: libparser.NodeChildren{
+								&libparser.NodeRedirect{
+									Source: &libparser.NodeExec{
+										Name: "patch",
+										NodeArgs: libparser.NodeArgs{
+											libparser.NewSimpleNodeString("-s"),
+											libparser.NewSimpleNodeString("-o"),
+											libparser.NewSimpleNodeString("/tmp/patched-file.json"),
+											&libparser.NodeExec{
+												Name: "realpath",
+												NodeArgs: libparser.NodeArgs{
+													&libparser.NodeString{
+														Segments: libparser.SegmentedString{
+															&libparser.LiteralStringSegment{
+																Contents: "../something/something/",
+															},
+															&libparser.VariableStringSegment{
+																Name:       "basename",
+																Modifiers:  []libparser.StringModifier{},
+																IsOptional: false,
+															},
+														},
+													},
+												},
+											},
+											&libparser.NodeString{
+												Segments: libparser.SegmentedString{
+													&libparser.VariableStringSegment{
+														Name:       "file",
+														Modifiers:  []libparser.StringModifier{},
+														IsOptional: false,
+													},
+												},
+											},
+										},
+									},
+									Stdout: libparser.NewSimpleNodeString("/some/output"),
+								},
+							},
+						},
+					},
 				},
 			},
 		},
@@ -320,4 +414,9 @@ var ExpectedData = []DataTestCase{
 			},
 		},
 	},
+}
+
+func getModifierSafe(name libparser.ModifierName) libparser.StringModifier {
+	modifier, _ := libparser.GetModifier(name, []string{})
+	return modifier
 }
