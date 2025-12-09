@@ -36,6 +36,7 @@ const (
 	MOD_PAD          ModifierName = "pad"
 	MOD_PAD_LEFT     ModifierName = "pad_left"
 	MOD_PAD_RIGHT    ModifierName = "pad_right"
+	MOD_SLICE        ModifierName = "slice"
 	MOD_REVERSE      ModifierName = "reverse"
 	MOD_INVERT       ModifierName = "invert"
 )
@@ -62,6 +63,7 @@ var AllModifiers = []ModifierName{
 	MOD_PAD,
 	MOD_PAD_LEFT,
 	MOD_PAD_RIGHT,
+	MOD_SLICE,
 	MOD_REVERSE,
 	MOD_INVERT,
 }
@@ -259,6 +261,24 @@ func GetModifier(name ModifierName, args []string) (StringModifier, error) {
 				mod.Call = func(in string) string {
 					return in + padding
 				}
+			}
+		}
+
+	case MOD_SLICE:
+		if len(mod.Args) > 1 {
+			from, err := strconv.Atoi(mod.Args[0])
+			if err != nil {
+				break
+			}
+			to, err := strconv.Atoi(mod.Args[1])
+			if err != nil {
+				break
+			}
+			mod.Call = func(in string) string {
+				if from >= len(in) {
+					return ""
+				}
+				return in[from:min(to, len(in))]
 			}
 		}
 
