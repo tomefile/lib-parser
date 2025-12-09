@@ -195,6 +195,9 @@ func (parser *Parser) readFilename() (*NodeString, *liberrors.DetailedError) {
 
 	switch char {
 
+	case ' ':
+		return parser.readFilename()
+
 	case '\'', '"', '`':
 		contents, err := parser.reader.ReadInsideQuotes(char)
 		if err != nil {
