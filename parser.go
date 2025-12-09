@@ -203,6 +203,7 @@ func (parser *Parser) readFilename() (*NodeString, *liberrors.DetailedError) {
 		return NewSimpleNodeString(contents), nil
 
 	default:
+		parser.reader.Unread()
 		filename, err := parser.reader.ReadSequence(readers.FilenameCharset)
 		if err != nil {
 			return nil, parser.failReading(err)
