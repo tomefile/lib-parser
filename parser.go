@@ -350,6 +350,11 @@ func (parser *Parser) readArg() (Node, *liberrors.DetailedError) {
 			continue
 		}
 
+		if current_segment.Len() != 0 {
+			out = append(out, &LiteralStringSegment{Contents: current_segment.String()})
+			current_segment.Reset()
+		}
+
 		char_after_dollar, err := parser.reader.Read()
 		if err != nil {
 			return nil, parser.failReading(err)
