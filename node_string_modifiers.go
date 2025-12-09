@@ -275,6 +275,12 @@ func GetModifier(name ModifierName, args []string) (StringModifier, error) {
 				break
 			}
 			mod.Call = func(in string) string {
+				if from < 0 {
+					from = max(0, len(in)+from)
+				}
+				if to < 0 {
+					to = max(0, len(in)+to)
+				}
 				if from >= len(in) {
 					return ""
 				}
