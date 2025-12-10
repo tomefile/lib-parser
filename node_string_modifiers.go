@@ -74,8 +74,8 @@ var AllModifiers = []ModifierName{
 
 type StringModifier struct {
 	Name ModifierName
-	Args []string
-	Call func(string) string
+	Args []*NodeString
+	Call func(Locals, string) string
 }
 
 func (modifier StringModifier) String() string {
@@ -83,11 +83,16 @@ func (modifier StringModifier) String() string {
 		return string(modifier.Name)
 	}
 
-	return fmt.Sprintf("%s %s", modifier.Name, strings.Join(modifier.Args, " "))
+	var builder strings.Builder
+	for _, arg := range modifier.Args {
+		builder.WriteString(" " + arg.String())
+	}
+
+	return fmt.Sprintf("%s %s", modifier.Name, builder.String())
 }
 
 func (modifier StringModifier) MarshalJSON() ([]byte, error) {
-	return json.Marshal(fmt.Sprintf("%s(%s)", modifier.Name, strings.Join(modifier.Args, " ")))
+	return json.Marshal(fmt.Sprintf("(%s)", modifier.String()))
 }
 
 // ————————————————————————————————
@@ -108,7 +113,7 @@ func SortNotModifierToEnd(modifiers []StringModifier) []StringModifier {
 	return output
 }
 
-func GetModifier(name ModifierName, args []string) (StringModifier, error) {
+func GetModifier(name ModifierName, args []*NodeString) (StringModifier, error) {
 	mod := StringModifier{
 		Name: name,
 		Args: args,
@@ -118,7 +123,7 @@ func GetModifier(name ModifierName, args []string) (StringModifier, error) {
 	switch mod.Name {
 
 	case MOD_NOT:
-		mod.Call = func(in string) string {
+		mod.Call = func(_ Locals, in string) string {
 			switch in {
 			case boolToString(true), "true", "TRUE":
 				return boolToString(false)
@@ -128,43 +133,59 @@ func GetModifier(name ModifierName, args []string) (StringModifier, error) {
 		}
 
 	case MOD_TO_LOWER:
-		mod.Call = strings.ToLower
+		mod.Call = func(_ Locals, in string) string {
+			return strings.ToLower(in)
+		}
 
 	case MOD_TO_UPPER:
-		mod.Call = strings.ToUpper
+		mod.Call = func(_ Locals, in string) string {
+			return strings.ToUpper(in)
+		}
 
 	case MOD_TO_SNAKE:
-		mod.Call = strcase.ToSnake
+		mod.Call = func(_ Locals, in string) string {
+			return strcase.ToSnake(in)
+		}
 
 	case MOD_TO_KEBAB:
-		mod.Call = strcase.ToKebab
+		mod.Call = func(_ Locals, in string) string {
+			return strcase.ToKebab(in)
+		}
 
 	case MOD_TO_CAMEL:
-		mod.Call = strcase.ToLowerCamel
+		mod.Call = func(_ Locals, in string) string {
+			return strcase.ToLowerCamel(in)
+		}
 
 	case MOD_TO_PASCAL:
-		mod.Call = strcase.ToCamel
+		mod.Call = func(_ Locals, in string) string {
+			return strcase.ToCamel(in)
+		}
 
 	case MOD_TO_DELIMITED:
-		if len(mod.Args) > 0 && len(mod.Args[0]) > 0 {
-			mod.Call = func(in string) string {
-				return strcase.ToDelimited(in, uint8(mod.Args[0][0]))
+		if len(mod.Args) > 0 && len(mod.Args[0].Segments) > 0 {
+			mod.Call = func(locals Locals, in string) string {
+				str, _ := mod.Args[0].Eval(locals)
+				if len(str) == 0 {
+					return in
+				}
+				return strcase.ToDelimited(in, uint8(str[0]))
 			}
 		}
 
 	case MOD_DOES_EXIST:
-		mod.Call = func(in string) string {
+		mod.Call = func(_ Locals, in string) string {
 			_, err := os.Stat(in)
 			return boolToString(!os.IsNotExist(err))
 		}
 
 	case MOD_IS_EMPTY:
-		mod.Call = func(in string) string {
+		mod.Call = func(_ Locals, in string) string {
 			return boolToString(len(in) == 0)
 		}
 
 	case MOD_IS_FILE:
-		mod.Call = func(in string) string {
+		mod.Call = func(_ Locals, in string) string {
 			stat, err := os.Stat(in)
 			if os.IsNotExist(err) {
 				return boolToString(false)
@@ -173,7 +194,7 @@ func GetModifier(name ModifierName, args []string) (StringModifier, error) {
 		}
 
 	case MOD_IS_DIR:
-		mod.Call = func(in string) string {
+		mod.Call = func(_ Locals, in string) string {
 			stat, err := os.Stat(in)
 			if os.IsNotExist(err) {
 				return boolToString(false)
@@ -182,7 +203,7 @@ func GetModifier(name ModifierName, args []string) (StringModifier, error) {
 		}
 
 	case MOD_IS_SYMLINK:
-		mod.Call = func(in string) string {
+		mod.Call = func(_ Locals, in string) string {
 			stat, err := os.Lstat(in)
 			if os.IsNotExist(err) {
 				return boolToString(false)
@@ -191,35 +212,47 @@ func GetModifier(name ModifierName, args []string) (StringModifier, error) {
 		}
 
 	case MOD_LENGTH:
-		mod.Call = func(in string) string {
+		mod.Call = func(_ Locals, in string) string {
 			return fmt.Sprint(len(in))
 		}
 
 	case MOD_QUOTED:
-		mod.Call = func(in string) string {
+		mod.Call = func(_ Locals, in string) string {
 			return fmt.Sprintf("%q", in)
 		}
 
 	case MOD_TRIM:
-		mod.Call = func(in string) string {
+		mod.Call = func(locals Locals, in string) string {
 			for _, arg := range mod.Args {
-				in = strings.Trim(in, arg)
+				value, err := arg.Eval(locals)
+				if err != nil {
+					return in
+				}
+				in = strings.Trim(in, value)
 			}
 			return in
 		}
 
 	case MOD_TRIM_PREFIX:
-		mod.Call = func(in string) string {
+		mod.Call = func(locals Locals, in string) string {
 			for _, arg := range mod.Args {
-				in = strings.TrimPrefix(in, arg)
+				value, err := arg.Eval(locals)
+				if err != nil {
+					return in
+				}
+				in = strings.TrimPrefix(in, value)
 			}
 			return in
 		}
 
 	case MOD_TRIM_SUFFIX:
-		mod.Call = func(in string) string {
+		mod.Call = func(locals Locals, in string) string {
 			for _, arg := range mod.Args {
-				in = strings.TrimSuffix(in, arg)
+				value, err := arg.Eval(locals)
+				if err != nil {
+					return in
+				}
+				in = strings.TrimSuffix(in, value)
 			}
 			return in
 		}
@@ -227,88 +260,117 @@ func GetModifier(name ModifierName, args []string) (StringModifier, error) {
 	case MOD_PAD:
 		switch len(mod.Args) {
 		case 1:
-			number, err := strconv.Atoi(mod.Args[0])
-			if err == nil {
-				padding := strings.Repeat(" ", max(0, number))
-				mod.Call = func(in string) string {
-					return padding + in + padding
+			mod.Call = func(locals Locals, in string) string {
+				value, err := mod.Args[0].Eval(locals)
+				if err != nil {
+					return in
 				}
+				number, err := strconv.Atoi(value)
+				if err != nil {
+					return in
+				}
+				return padString(in, number, number)
 			}
 		case 2:
-			number_1, err_1 := strconv.Atoi(mod.Args[0])
-			number_2, err_2 := strconv.Atoi(mod.Args[1])
-			if err_1 == nil && err_2 == nil {
-				mod.Call = func(in string) string {
-					return strings.Repeat(" ", max(0, number_1)) +
-						in +
-						strings.Repeat(" ", max(0, number_2))
+			mod.Call = func(locals Locals, in string) string {
+				value_1, err := mod.Args[0].Eval(locals)
+				if err != nil {
+					return in
 				}
+				value_2, err := mod.Args[1].Eval(locals)
+				if err != nil {
+					return in
+				}
+				number_1, err := strconv.Atoi(value_1)
+				if err != nil {
+					return in
+				}
+				number_2, err := strconv.Atoi(value_2)
+				if err != nil {
+					return in
+				}
+				return padString(in, number_1, number_2)
 			}
 		}
 
 	case MOD_PAD_LEFT:
 		if len(mod.Args) > 0 {
-			number, err := strconv.Atoi(mod.Args[0])
-			if err == nil {
-				padding := strings.Repeat(" ", max(0, number))
-				mod.Call = func(in string) string {
-					return padding + in
+			mod.Call = func(locals Locals, in string) string {
+				value, err := mod.Args[0].Eval(locals)
+				if err != nil {
+					return in
 				}
+				number, err := strconv.Atoi(value)
+				if err != nil {
+					return in
+				}
+				return padString(in, number, 0)
 			}
 		}
 
 	case MOD_PAD_RIGHT:
 		if len(mod.Args) > 0 {
-			number, err := strconv.Atoi(mod.Args[0])
-			if err == nil {
-				padding := strings.Repeat(" ", max(0, number))
-				mod.Call = func(in string) string {
-					return in + padding
+			mod.Call = func(locals Locals, in string) string {
+				value, err := mod.Args[0].Eval(locals)
+				if err != nil {
+					return in
 				}
+				number, err := strconv.Atoi(value)
+				if err != nil {
+					return in
+				}
+				return padString(in, 0, number)
 			}
 		}
 
 	case MOD_HAS_PREFIX:
 		if len(mod.Args) > 0 {
-			mod.Call = func(in string) string {
-				return boolToString(strings.HasPrefix(in, mod.Args[0]))
+			mod.Call = func(locals Locals, in string) string {
+				value, err := mod.Args[0].Eval(locals)
+				if err != nil {
+					return in
+				}
+				return boolToString(strings.HasPrefix(in, value))
 			}
 		}
 
 	case MOD_HAS_SUFFIX:
 		if len(mod.Args) > 0 {
-			mod.Call = func(in string) string {
-				return boolToString(strings.HasSuffix(in, mod.Args[0]))
+			mod.Call = func(locals Locals, in string) string {
+				value, err := mod.Args[0].Eval(locals)
+				if err != nil {
+					return in
+				}
+				return boolToString(strings.HasSuffix(in, value))
 			}
 		}
 
 	case MOD_SLICE:
 		if len(mod.Args) > 1 {
-			from, err := strconv.Atoi(mod.Args[0])
-			if err != nil {
-				break
-			}
-			to, err := strconv.Atoi(mod.Args[1])
-			if err != nil {
-				break
-			}
-			mod.Call = func(in string) string {
-				if from < 0 {
-					from = max(0, len(in)+from)
+			mod.Call = func(locals Locals, in string) string {
+				value_1, err := mod.Args[0].Eval(locals)
+				if err != nil {
+					return in
 				}
-				if to < 0 {
-					to = max(0, len(in)+to)
+				value_2, err := mod.Args[1].Eval(locals)
+				if err != nil {
+					return in
 				}
-				if from >= len(in) {
-					return ""
+				number_1, err := strconv.Atoi(value_1)
+				if err != nil {
+					return in
 				}
-				return in[from:min(to, len(in))]
+				number_2, err := strconv.Atoi(value_2)
+				if err != nil {
+					return in
+				}
+				return sliceString(in, number_1, number_2)
 			}
 		}
 
 	case MOD_REVERSE:
 		// https://stackoverflow.com/a/10030772
-		mod.Call = func(in string) string {
+		mod.Call = func(_ Locals, in string) string {
 			runes := []rune(in)
 			for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
 				runes[i], runes[j] = runes[j], runes[i]
@@ -318,7 +380,7 @@ func GetModifier(name ModifierName, args []string) (StringModifier, error) {
 
 	case MOD_INVERT:
 		// https://stackoverflow.com/a/38234154
-		mod.Call = func(in string) string {
+		mod.Call = func(_ Locals, in string) string {
 			return strings.Map(func(char rune) rune {
 				switch {
 				case unicode.IsLower(char):
@@ -346,4 +408,21 @@ func boolToString(value bool) string {
 		return "1"
 	}
 	return "0"
+}
+
+func padString(in string, left, right int) string {
+	return strings.Repeat(" ", max(0, left)) + in + strings.Repeat(" ", max(0, right))
+}
+
+func sliceString(in string, from, to int) string {
+	if from < 0 {
+		from = max(0, len(in)+from)
+	}
+	if to < 0 {
+		to = max(0, len(in)+to)
+	}
+	if from >= len(in) {
+		return ""
+	}
+	return in[from:min(to, len(in))]
 }

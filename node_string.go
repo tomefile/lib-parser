@@ -18,6 +18,20 @@ func (node *NodeString) String() string {
 	return fmt.Sprintf("\"%s\"", node.Segments.String())
 }
 
+func (node *NodeString) Eval(locals Locals) (string, error) {
+	var builder strings.Builder
+
+	for _, segment := range node.Segments {
+		part, err := segment.Eval(locals)
+		if err != nil {
+			return "", err
+		}
+		builder.WriteString(part)
+	}
+
+	return builder.String(), nil
+}
+
 func NewSimpleNodeString(contents string) *NodeString {
 	return &NodeString{
 		Segments: SegmentedString{
@@ -103,7 +117,7 @@ func (segment *VariableStringSegment) Eval(locals Locals) (string, error) {
 	}
 
 	for _, modifier := range segment.Modifiers {
-		value = modifier.Call(value)
+		value = modifier.Call(locals, value)
 	}
 
 	return value, nil

@@ -468,35 +468,94 @@ func (parser *Parser) readVariableExpansion() (*VariableStringSegment, *liberror
 		return nil, parser.failSyntaxHere("unexpected %q in a variable expansion", char)
 	}
 
-	modifier_offset_start := parser.reader.Offset
 	modifiers := []StringModifier{}
 
 	for {
-		modifier_string, err := parser.reader.ReadDelimited(false, ':', '}', '\n', ';')
-		if err != nil {
-			return nil, parser.failReading(err)
+		modifier, derr := parser.readVariableModifier()
+		if modifier.Name != "" {
+			modifiers = append(modifiers, modifier)
 		}
-		parts := strings.Split(modifier_string, " ")
-		modifier, err := GetModifier(ModifierName(parts[0]), parts[1:])
+		if derr != nil {
+			if derr == EOA {
+				return &VariableStringSegment{
+					Name:       name,
+					Modifiers:  SortNotModifierToEnd(modifiers),
+					IsOptional: optional,
+				}, nil
+			}
+			return nil, derr
+		}
+	}
+}
+
+func (parser *Parser) readVariableModifier() (StringModifier, *liberrors.DetailedError) {
+	offset_start := parser.reader.Offset
+
+	modifier_name, err := parser.reader.ReadSequence(readers.NameCharset)
+	if err != nil {
+		return StringModifier{}, parser.failReading(err)
+	}
+
+	char, err := parser.reader.Read()
+	if err != nil {
+		return StringModifier{}, parser.failReading(err)
+	}
+
+	args := []*NodeString{}
+
+	switch char {
+
+	case ' ':
+	read_argument:
+		arg, derr := parser.readFilename()
+		if derr != nil {
+			return StringModifier{}, derr
+		}
+		if len(arg.Segments) != 0 {
+			args = append(args, arg)
+		}
+
+		next_char, err := parser.reader.Read()
 		if err != nil {
-			return nil, parser.fail(
-				modifier_offset_start,
+			return StringModifier{}, parser.failReading(err)
+		}
+		if next_char == '}' || next_char == ':' {
+			modifier, err := GetModifier(ModifierName(modifier_name), args)
+			if err != nil {
+				return StringModifier{}, parser.fail(
+					offset_start,
+					liberrors.ERROR_VALIDATION,
+					err.Error(),
+				)
+			}
+			if next_char == '}' {
+				return modifier, EOA
+			}
+			return modifier, nil
+		}
+		if next_char == ' ' {
+			goto read_argument
+		}
+		goto unexpected_character
+
+	case '}', ':':
+		modifier, err := GetModifier(ModifierName(modifier_name), []*NodeString{})
+		if err != nil {
+			return StringModifier{}, parser.fail(
+				offset_start,
 				liberrors.ERROR_VALIDATION,
 				err.Error(),
 			)
 		}
-		modifiers = append(modifiers, modifier)
-
-		char, _ = parser.reader.Read()
 		if char == '}' {
-			return &VariableStringSegment{
-				Name:       name,
-				Modifiers:  SortNotModifierToEnd(modifiers),
-				IsOptional: optional,
-			}, nil
+			return modifier, EOA
 		}
-		if char == '\n' || char == ';' {
-			return nil, parser.failSyntaxHere("unexpected %q in a variable expansion", char)
-		}
+		return modifier, nil
 	}
+
+unexpected_character:
+	return StringModifier{}, parser.failSyntaxHere(
+		"unexpected character %q in a variable expansion modifier",
+		char,
+	)
 }

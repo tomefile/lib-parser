@@ -417,6 +417,6 @@ var ExpectedData = []DataTestCase{
 }
 
 func getModifierSafe(name libparser.ModifierName) libparser.StringModifier {
-	modifier, _ := libparser.GetModifier(name, []string{})
+	modifier, _ := libparser.GetModifier(name, []*libparser.NodeString{})
 	return modifier
 }
