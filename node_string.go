@@ -15,7 +15,11 @@ func (node *NodeString) Context() NodeContext {
 }
 
 func (node *NodeString) String() string {
-	return fmt.Sprintf("\"%s\"", node.Segments.String())
+	value := node.Segments.String()
+	if ShouldStringBeQuoted(value) {
+		return fmt.Sprintf("\"%s\"", node.Segments.String())
+	}
+	return value
 }
 
 func (node *NodeString) Eval(locals Locals) (string, error) {
@@ -125,9 +129,9 @@ func (segment *VariableStringSegment) Eval(locals Locals) (string, error) {
 
 // ————————————————————————————————
 
-func ParseString(in string) SegmentedString {
-	// TODO: add string parsing
-	out := SegmentedString{}
-	out = append(out, &LiteralStringSegment{in})
-	return out
+func ShouldStringBeQuoted(value string) bool {
+	if strings.HasPrefix(value, "${") && strings.HasSuffix(value, "}") {
+		return false
+	}
+	return strings.ToLower(value) != value || strings.ContainsAny(value, " \"'`[]{}")
 }
