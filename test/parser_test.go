@@ -68,7 +68,7 @@ func TestPostProcessor(test *testing.T) {
 	defer libparser.CloseAll()
 
 	message := "this is a result of post processing!"
-	path := filepath.Join("data", "01_basic.tome")
+	path := filepath.Join("data", "01_syntax.tome")
 
 	file, err := libparser.OpenFile(path)
 	assert.NilError(test, err)
