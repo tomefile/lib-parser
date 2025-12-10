@@ -26,7 +26,28 @@ func NoShebangHook(node Node) (Node, *liberrors.DetailedError) {
 	return node, nil
 }
 
-// FIXME: Make sure it works.
+// Puts the node to chan before it gets appended to the tree.
+// Useful for tracking the progress of parsing in very large files.
+//
+// # Example usage:
+//
+//	channel := make(chan libparser.Node)
+//
+//	parser := libparser.New(file)
+//	parser.Hooks = []libparser.Hook{
+//	    libparser.StreamHook(channel),
+//	}
+//
+//	go func() {
+//	    defer close(channel) // IMPORTANT! Without this you'll hang the process FOREVER.
+//	    if derr := parser.Run(); derr != nil {
+//	        ...
+//	    }
+//	}()
+//
+//	for node := range channel {
+//	    ...
+//	}
 func StreamHook(channel chan Node) Hook {
 	return func(node Node) (Node, *liberrors.DetailedError) {
 		channel <- node
