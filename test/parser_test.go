@@ -33,7 +33,6 @@ func TestAll(test *testing.T) {
 			parser := libparser.New(file)
 			parser.Hooks = []libparser.Hook{
 				libparser.NoShebangHook,
-				// libparser.ExcludeHook[*libparser.NodeWhitespace],
 			}
 
 			derr := parser.Run()
