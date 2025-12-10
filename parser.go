@@ -116,7 +116,7 @@ func (parser *Parser) next() *liberrors.DetailedError {
 		})
 	}
 
-	if !readers.NameCharset(char) {
+	if !readers.FilenameCharset(char) && !readers.QuotesCharset(char) {
 		return parser.failSyntaxHere(
 			"unexpected %q at the start of a statement. If it belongs to the statement above, add a '\\' to the end of the previous line.",
 			char,
@@ -188,6 +188,7 @@ func (parser *Parser) readRedirection() (*NodeRedirect, *liberrors.DetailedError
 }
 
 func (parser *Parser) readFilename() (*NodeString, *liberrors.DetailedError) {
+	// TODO: Add string parsing
 	char, err := parser.reader.Read()
 	if err != nil {
 		return nil, parser.failReading(err)
@@ -218,10 +219,11 @@ func (parser *Parser) readFilename() (*NodeString, *liberrors.DetailedError) {
 func (parser *Parser) readStatement() (Node, *liberrors.DetailedError) {
 	start_offset := parser.reader.Offset
 
-	name, err := parser.reader.ReadSequence(readers.NameCharset)
+	string_name, err := parser.readFilename()
 	if err != nil {
 		return nil, parser.failReading(err)
 	}
+	name := string_name.String()
 
 	args, derr := parser.readArgs()
 	if derr != nil && derr != EOF {

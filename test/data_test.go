@@ -22,7 +22,7 @@ var ExpectedData = []DataTestCase{
 					NodeChildren: libparser.NodeChildren{},
 				},
 				&libparser.NodeExec{
-					Name: "echo",
+					Name: "./local/echo",
 					NodeArgs: libparser.NodeArgs{
 						libparser.NewSimpleNodeString("Hello World!"),
 						libparser.NewSimpleNodeString("and another line"),

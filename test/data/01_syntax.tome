@@ -2,7 +2,7 @@
 # Example program, привет мир 👨‍🚀!
 :include @std
 
-echo "Hello World!" \
+./local/echo "Hello World!" \
 	"and another line" \
 	"and another."
 
