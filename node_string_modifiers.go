@@ -142,7 +142,7 @@ func GetModifier(name ModifierName, args []string) (StringModifier, error) {
 		mod.Call = strcase.ToCamel
 
 	case MOD_TO_DELIMITED:
-		if len(mod.Args) > 0 {
+		if len(mod.Args) > 0 && len(mod.Args[0]) > 0 {
 			mod.Call = func(in string) string {
 				return strcase.ToDelimited(in, uint8(mod.Args[0][0]))
 			}
