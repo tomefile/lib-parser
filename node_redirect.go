@@ -16,14 +16,14 @@ func (node *NodeRedirect) Context() NodeContext {
 
 func (node *NodeRedirect) String() string {
 	var builder strings.Builder
-	if node.Stdin != nil {
-		builder.WriteString(" <" + node.Stdin.Segments.String())
-	}
-	if node.Stdout != nil {
-		builder.WriteString(" >" + node.Stdout.Segments.String())
-	}
-	if node.Stderr != nil {
-		builder.WriteString(" >>" + node.Stderr.Segments.String())
-	}
+	node.printIfNotNil(&builder, node.Stdin, " <")
+	node.printIfNotNil(&builder, node.Stdout, " >")
+	node.printIfNotNil(&builder, node.Stderr, " >>")
 	return node.Source.String() + builder.String()
+}
+
+func (node *NodeRedirect) printIfNotNil(b *strings.Builder, target *NodeString, prefix string) {
+	if target != nil {
+		b.WriteString(prefix + target.String())
+	}
 }

@@ -49,7 +49,7 @@ func (children NodeChildren) String() string {
 	builder.WriteString(" {\n")
 
 	for _, arg := range children {
-		builder.WriteString("--- " + arg.String() + "\n")
+		builder.WriteString(" " + arg.String() + "; ")
 	}
 
 	builder.WriteString("}")
