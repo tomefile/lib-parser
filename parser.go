@@ -71,6 +71,9 @@ func (parser *Parser) next() *liberrors.DetailedError {
 	}
 
 	if readers.WhitespaceCharset(char) || char == ';' {
+		if char == '\n' {
+			return parser.write(&NodeWhitespace{NodeContext: parser.makeContext(start_offset)})
+		}
 		return nil
 	}
 

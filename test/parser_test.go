@@ -31,7 +31,10 @@ func TestAll(test *testing.T) {
 			assert.NilError(test, err)
 
 			parser := libparser.New(file)
-			parser.Hooks = []libparser.Hook{libparser.NoShebangHook}
+			parser.Hooks = []libparser.Hook{
+				libparser.NoShebangHook,
+				libparser.ExcludeHook[*libparser.NodeWhitespace],
+			}
 
 			derr := parser.Run()
 			if os.Getenv("GO_DEBUG") == "1" {
@@ -76,6 +79,7 @@ func TestPostProcessor(test *testing.T) {
 	parser := libparser.New(file)
 	parser.Hooks = []libparser.Hook{
 		libparser.NoShebangHook,
+		libparser.ExcludeHook[*libparser.NodeWhitespace],
 		libparser.ExcludeHook[*libparser.NodeExec],
 		libparser.ExcludeHook[*libparser.NodeDirective],
 		func(node libparser.Node) (libparser.Node, *liberrors.DetailedError) {
