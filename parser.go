@@ -80,6 +80,10 @@ func (parser *Parser) next() *liberrors.DetailedError {
 	switch char {
 
 	case '}':
+		char, _ := parser.reader.Read()
+		if char != '\n' {
+			parser.reader.Unread()
+		}
 		return EOB
 
 	case '#':
@@ -316,7 +320,9 @@ func (parser *Parser) readArg() (Node, *liberrors.DetailedError) {
 			}
 
 			if current_segment.Len() == 0 && len(out) == 0 {
-				parser.reader.Unread()
+				if char != '\n' {
+					parser.reader.Unread()
+				}
 				return nil, EOA
 			}
 
@@ -418,6 +424,11 @@ func (parser *Parser) readChildren() (NodeChildren, error) {
 	if char != '{' {
 		parser.reader.Unread()
 		return out, nil
+	}
+
+	char, err = parser.reader.Read()
+	if err != nil {
+		return out, err
 	}
 
 	for {

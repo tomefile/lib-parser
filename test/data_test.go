@@ -21,6 +21,7 @@ var ExpectedData = []DataTestCase{
 					},
 					NodeChildren: libparser.NodeChildren{},
 				},
+				&libparser.NodeWhitespace{},
 				&libparser.NodeExec{
 					Name: "./local/echo",
 					NodeArgs: libparser.NodeArgs{
@@ -29,6 +30,7 @@ var ExpectedData = []DataTestCase{
 						libparser.NewSimpleNodeString("and another."),
 					},
 				},
+				&libparser.NodeWhitespace{},
 				&libparser.NodeDirective{
 					Name: "section",
 					NodeArgs: libparser.NodeArgs{
@@ -147,6 +149,7 @@ var ExpectedData = []DataTestCase{
 						libparser.NewSimpleNodeString("1"),
 					},
 				},
+				&libparser.NodeWhitespace{},
 				&libparser.NodeDirective{
 					Name: "section",
 					NodeArgs: libparser.NodeArgs{
@@ -181,6 +184,7 @@ var ExpectedData = []DataTestCase{
 						libparser.NewSimpleNodeString("1"),
 					},
 				},
+				&libparser.NodeWhitespace{},
 				&libparser.NodeDirective{
 					Name: "section",
 					NodeArgs: libparser.NodeArgs{
@@ -199,6 +203,7 @@ var ExpectedData = []DataTestCase{
 								libparser.NewSimpleNodeString("1.2"),
 							},
 						},
+						&libparser.NodeWhitespace{},
 						&libparser.NodeDirective{
 							Name: "section",
 							NodeArgs: libparser.NodeArgs{
@@ -220,6 +225,7 @@ var ExpectedData = []DataTestCase{
 								},
 							},
 						},
+						&libparser.NodeWhitespace{},
 						&libparser.NodeExec{
 							Name: "echo",
 							NodeArgs: libparser.NodeArgs{
@@ -275,6 +281,7 @@ var ExpectedData = []DataTestCase{
 						libparser.NewSimpleNodeString("0"),
 					},
 				},
+				&libparser.NodeWhitespace{},
 				&libparser.NodeDirective{
 					Name: "tome",
 					NodeArgs: libparser.NodeArgs{
@@ -289,6 +296,7 @@ var ExpectedData = []DataTestCase{
 						},
 					},
 				},
+				&libparser.NodeWhitespace{},
 				&libparser.NodeDirective{
 					Name: "tome",
 					NodeArgs: libparser.NodeArgs{
@@ -360,6 +368,7 @@ var ExpectedData = []DataTestCase{
 						},
 					},
 				},
+				&libparser.NodeWhitespace{},
 				&libparser.NodePipe{
 					Source: &libparser.NodeExec{
 						Name: "echo",
