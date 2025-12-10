@@ -14,6 +14,7 @@ func (parser *Parser) makeContext(offset uint) NodeContext {
 func (parser *Parser) process(node Node) (Node, *liberrors.DetailedError) {
 	// The reason it's calculated early is because it can be changed
 	// during post-processing, but it is still a tome.
+	// NOTE: This has a side-effect of tomes not being discarded by hooks.
 	tome_name := ""
 	switch node := node.(type) {
 	case *NodeDirective:
@@ -30,6 +31,7 @@ func (parser *Parser) process(node Node) (Node, *liberrors.DetailedError) {
 		}
 	}
 
+	// Run hooks
 	offset_start := node.Context().OffsetStart
 	var derr *liberrors.DetailedError
 	for _, hook := range parser.Hooks {

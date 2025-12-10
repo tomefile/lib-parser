@@ -6,8 +6,12 @@ import (
 	liberrors "github.com/tomefile/lib-errors"
 )
 
+// A function to be called on every Node before the parser attempts to append it to the tree.
+//
+// Return `nil` to discard the Node.
 type Hook func(original Node) (modified Node, derr *liberrors.DetailedError)
 
+// Discards Nodes of type T
 func ExcludeHook[T Node](node Node) (Node, *liberrors.DetailedError) {
 	switch node.(type) {
 	case T:
@@ -16,6 +20,7 @@ func ExcludeHook[T Node](node Node) (Node, *liberrors.DetailedError) {
 	return node, nil
 }
 
+// Removes the UNIX shebang
 func NoShebangHook(node Node) (Node, *liberrors.DetailedError) {
 	switch node := node.(type) {
 	case *NodeComment:
