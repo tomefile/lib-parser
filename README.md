@@ -28,6 +28,7 @@ Things that need to be done before `v1`:
 
 - [x] Save context to Nodes and allow for partial parsing.
 - [ ] Partial parsing
+- [ ] Improve runtime string modifier evaluation (currently it just fails silently)
 - [ ] Multi-line arguments `(...)`
 - [ ] Better test coverage (Add more edge-cases where formatting isn't perfect)
 
