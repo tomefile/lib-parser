@@ -30,6 +30,7 @@ Things that need to be done before `v1`:
 - [ ] Partial parsing
 - [ ] Improve runtime string modifier evaluation (currently it just fails silently)
 - [ ] Multi-line arguments `(...)`
+- [ ] Revisit all of the code and make sure it's well-made (it isn't)
 - [ ] Better test coverage (Add more edge-cases where formatting isn't perfect)
 
 ## Usage
