@@ -5,6 +5,8 @@ Library to parse [Tomefile](https://github.com/tomefile) code and output a node 
 <!-- vim-markdown-toc GFM -->
 
 * [Features](#features)
+    * [Parsing](#parsing)
+    * [Hooks](#hooks)
 * [Roadmap](#roadmap)
 * [Usage](#usage)
 
@@ -12,9 +14,13 @@ Library to parse [Tomefile](https://github.com/tomefile) code and output a node 
 
 ## Features
 
-- **Parsing** `libparser.Parse(...)` — Parses the input UTF-8 stream into a node tree
-- **Formatting** `libparser.Format(...)` — Formats the input UTF-8 stream returning a slice of segments. Used to substitute environmental, local, and such variables.
-- **Post-Processing** `func(Node) (Node, *liberrors.DetailedError)` — Inject functions into `libparser.Parse(...)` to be applied to a node before it gets appended to the tree. Returns as soon as an error is encountered. Used to validate, discard or modify nodes.
+### Parsing
+
+Parses the input file into a `*libparser.NodeRoot{}` including string segments.
+
+### Hooks
+
+Allow to run custom `libparser.Hook()` functions on `libparser.Node` before it gets appended to the tree. Returns as soon as an error is encountered. Used to validate, discard or modify nodes.
 
 ## Roadmap
 
@@ -38,17 +44,19 @@ if err != nil {
     panic(err)
 }
 
-parser := libparser.New(file).
-    With(libparser.PostNoShebang).  // remove UNIX shebang, e.g. #!/bin/tome
-    With(libparser.PostExclude[*libparser.CommentNode])  // let's say we want to exclude a specific node type
+parser := libparser.New(file)
+parser.Hooks = []libparser.Hook{
+    libparser.PostNoShebang,  // remove UNIX shebang, e.g. #!/bin/tome
+    libparser.PostExclude[*libparser.CommentNode],  // by default, the parser includes ALL file contents, you can discard what's not needed.
+}
 
-tree, derr := parser.Parse()
-if derr != nil {
+if derr := parser.Run(); derr != nil {
     derr.Print(os.Stderr)
     os.Exit(1)
 }
 
-// [tree] is [*libparser.NodeTree]
+// [parser.Result] is [*libparser.NodeTree]
+return parser.Result
 ```
 
 Formatting a variable (i.e. `$name ${name:mod} etc.`)
