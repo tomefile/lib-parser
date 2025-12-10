@@ -88,7 +88,7 @@ func (modifier StringModifier) String() string {
 		builder.WriteString(" " + arg.String())
 	}
 
-	return fmt.Sprintf("%s %s", modifier.Name, builder.String())
+	return fmt.Sprintf("%s%s", modifier.Name, builder.String())
 }
 
 func (modifier StringModifier) MarshalJSON() ([]byte, error) {
