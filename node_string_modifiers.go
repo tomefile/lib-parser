@@ -41,6 +41,7 @@ const (
 	MOD_SLICE        ModifierName = "slice"
 	MOD_REVERSE      ModifierName = "reverse"
 	MOD_INVERT       ModifierName = "invert"
+	MOD_CONTAINS     ModifierName = "contains"
 )
 
 var AllModifiers = []ModifierName{
@@ -70,6 +71,7 @@ var AllModifiers = []ModifierName{
 	MOD_SLICE,
 	MOD_REVERSE,
 	MOD_INVERT,
+	MOD_CONTAINS,
 }
 
 type StringModifier struct {
@@ -390,6 +392,17 @@ func GetModifier(name ModifierName, args []*NodeString) (StringModifier, error) 
 				}
 				return char
 			}, in)
+		}
+
+	case MOD_CONTAINS:
+		if len(mod.Args) > 0 {
+			mod.Call = func(locals Locals, in string) string {
+				value, err := mod.Args[0].Eval(locals)
+				if err != nil {
+					return boolToString(false)
+				}
+				return boolToString(strings.Contains(in, value))
+			}
 		}
 
 	default:

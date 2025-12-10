@@ -178,6 +178,12 @@ var ModifierExpectedData = []ModifierTestCase{
 		Args:   []*libparser.NodeString{},
 		Expect: "hELLO wORLD!",
 	},
+	{
+		Name:   libparser.MOD_CONTAINS,
+		Input:  "Hello World!",
+		Args:   []*libparser.NodeString{libparser.NewSimpleNodeString("World")},
+		Expect: "1",
+	},
 }
 
 func TestModifier(test *testing.T) {
