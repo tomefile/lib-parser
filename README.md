@@ -58,19 +58,3 @@ if derr := parser.Run(); derr != nil {
 // [parser.Result] is [*libparser.NodeTree]
 return parser.Result
 ```
-
-Formatting a variable (i.e. `$name ${name:mod} etc.`)
-
-```go
-formatter := libparser.NewStringFormatter("this is an example $string with ${string:trim_suffix 123}",)
-
-segments, derr := formatter.Format()
-if derr != nil {
-    derr.Print(os.Stderr)
-    os.Exit(1)
-}
-
-// [segments] is [[]libparser.Segment]
-```
-
-Add RedirectSource
