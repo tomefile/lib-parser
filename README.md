@@ -47,7 +47,7 @@ if err != nil {
 parser := libparser.New(file)
 parser.Hooks = []libparser.Hook{
     libparser.NoShebangHook,  // remove UNIX shebang, e.g. #!/bin/tome
-    libparser.ExcludeHook[*libparser.CommentNode],  // by default, the parser includes ALL file contents, you can discard what's not needed.
+    libparser.ExcludeHook[*libparser.NodeComment],  // by default, the parser includes ALL file contents, you can discard what's not needed.
 }
 
 if derr := parser.Run(); derr != nil {
