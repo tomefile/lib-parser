@@ -116,10 +116,10 @@ func GetModifier(name ModifierName, args []string) (StringModifier, error) {
 	case MOD_NOT:
 		mod.Call = func(in string) string {
 			switch in {
-			case boolToString(false), "false", "FALSE":
-				return boolToString(true)
-			default:
+			case boolToString(true), "true", "TRUE":
 				return boolToString(false)
+			default:
+				return boolToString(true)
 			}
 		}
 
