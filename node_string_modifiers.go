@@ -36,6 +36,8 @@ const (
 	MOD_PAD          ModifierName = "pad"
 	MOD_PAD_LEFT     ModifierName = "pad_left"
 	MOD_PAD_RIGHT    ModifierName = "pad_right"
+	MOD_HAS_PREFIX   ModifierName = "has_prefix"
+	MOD_HAS_SUFFIX   ModifierName = "has_suffix"
 	MOD_SLICE        ModifierName = "slice"
 	MOD_REVERSE      ModifierName = "reverse"
 	MOD_INVERT       ModifierName = "invert"
@@ -63,6 +65,8 @@ var AllModifiers = []ModifierName{
 	MOD_PAD,
 	MOD_PAD_LEFT,
 	MOD_PAD_RIGHT,
+	MOD_HAS_PREFIX,
+	MOD_HAS_SUFFIX,
 	MOD_SLICE,
 	MOD_REVERSE,
 	MOD_INVERT,
@@ -261,6 +265,20 @@ func GetModifier(name ModifierName, args []string) (StringModifier, error) {
 				mod.Call = func(in string) string {
 					return in + padding
 				}
+			}
+		}
+
+	case MOD_HAS_PREFIX:
+		if len(mod.Args) > 0 {
+			mod.Call = func(in string) string {
+				return boolToString(strings.HasPrefix(in, mod.Args[0]))
+			}
+		}
+
+	case MOD_HAS_SUFFIX:
+		if len(mod.Args) > 0 {
+			mod.Call = func(in string) string {
+				return boolToString(strings.HasSuffix(in, mod.Args[0]))
 			}
 		}
 

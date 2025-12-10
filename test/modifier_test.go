@@ -143,6 +143,18 @@ var ModifierExpectedData = []ModifierTestCase{
 		Expect: "abc   ",
 	},
 	{
+		Name:   libparser.MOD_HAS_PREFIX,
+		Input:  "abcdef",
+		Args:   []string{"abc"},
+		Expect: "1",
+	},
+	{
+		Name:   libparser.MOD_HAS_SUFFIX,
+		Input:  "abcdef",
+		Args:   []string{"abc"},
+		Expect: "0",
+	},
+	{
 		Name:   libparser.MOD_SLICE,
 		Input:  "abcdef",
 		Args:   []string{"1", "-2"},
