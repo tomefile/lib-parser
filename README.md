@@ -21,12 +21,9 @@ Library to parse [Tomefile](https://github.com/tomefile) code and output a node 
 Things that need to be done before `v1`:
 
 - [x] Save context to Nodes and allow for partial parsing.
-- [x] Support for `;` to separate statements.
-- [x] Support `&&` and `||` in commands.
-- [x] Pipes `|`.
-- [x] Redirects `>`, `<`, `>>`, `<<`, `<<<`.
+- [ ] Partial parsing
 - [ ] Multi-line arguments `(...)`
-- [ ] Better test coverage
+- [ ] Better test coverage (Add more edge-cases where formatting isn't perfect)
 
 ## Usage
 
