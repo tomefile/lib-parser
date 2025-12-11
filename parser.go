@@ -272,10 +272,6 @@ func (parser *Parser) readStatement() (Node, *liberrors.DetailedError) {
 
 	case ')':
 		parser.reader.Read()
-		peek, _ := parser.reader.Peek()
-		if peek == '\n' {
-			parser.reader.Read()
-		}
 	}
 
 	return node, nil
