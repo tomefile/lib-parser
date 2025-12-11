@@ -133,5 +133,5 @@ func ShouldStringBeQuoted(value string) bool {
 	if strings.HasPrefix(value, "${") && strings.HasSuffix(value, "}") {
 		return false
 	}
-	return strings.ToLower(value) != value || strings.ContainsAny(value, " \"'`[]{}")
+	return strings.ContainsAny(value, " \"'`[]{}")
 }
