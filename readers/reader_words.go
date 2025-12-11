@@ -88,6 +88,7 @@ func (reader *Reader) ReadDelimited(including bool, delims ...rune) (string, err
 }
 
 func (reader *Reader) ReadInsideQuotes(quote rune) (string, error) {
+	// TODO: Parse variables
 	var builder strings.Builder
 	is_escaped := false
 
