@@ -15,3 +15,5 @@
 			$file >  /some/output
 	}
 }
+
+:tome empty {}

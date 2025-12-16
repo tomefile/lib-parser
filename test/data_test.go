@@ -11,7 +11,9 @@ var ExpectedData = []DataTestCase{
 	{
 		Filename: "01_syntax.tome",
 		Expect: &libparser.NodeRoot{
-			Tomes: map[string]libparser.Node{},
+			Tomes: map[string]libparser.Node{
+				"empty": nil,
+			},
 			NodeChildren: libparser.NodeChildren{
 				&libparser.NodeComment{Contents: " Example program, привет мир 👨‍🚀!"},
 				&libparser.NodeDirective{
@@ -139,6 +141,14 @@ var ExpectedData = []DataTestCase{
 							},
 						},
 					},
+				},
+				&libparser.NodeWhitespace{},
+				&libparser.NodeDirective{
+					Name: "tome",
+					NodeArgs: libparser.NodeArgs{
+						libparser.NewSimpleNodeString("empty"),
+					},
+					NodeChildren: libparser.NodeChildren{},
 				},
 			},
 		},

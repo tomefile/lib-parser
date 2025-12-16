@@ -436,6 +436,15 @@ func (parser *Parser) readChildren() (NodeChildren, error) {
 		return out, err
 	}
 
+	if char == '}' {
+		// consume the \n as well
+		char, _ = parser.reader.Read()
+		if char != '\n' {
+			parser.reader.Unread()
+		}
+		return out, nil
+	}
+
 	for {
 		derr := parser.next()
 		switch derr {
