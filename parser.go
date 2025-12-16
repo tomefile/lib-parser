@@ -309,6 +309,10 @@ func (parser *Parser) readArg() (Node, *liberrors.DetailedError) {
 				out = append(out, &LiteralStringSegment{Contents: current_segment.String()})
 			}
 
+			if parser.escaped(char, '\n') {
+				return &NodeWhitespace{IsLineBreak: true}, nil
+			}
+
 			if char == ' ' || char == '\t' || parser.escaped(char, '\n') {
 				if len(out) == 0 {
 					return nil, nil

@@ -26,7 +26,9 @@ var ExpectedData = []DataTestCase{
 					Name: "./local/echo",
 					NodeArgs: libparser.NodeArgs{
 						libparser.NewSimpleNodeString("Hello World!"),
+						&libparser.NodeWhitespace{IsLineBreak: true},
 						libparser.NewSimpleNodeString("and another line"),
+						&libparser.NodeWhitespace{IsLineBreak: true},
 						libparser.NewSimpleNodeString("and another."),
 					},
 				},
@@ -99,8 +101,10 @@ var ExpectedData = []DataTestCase{
 										Name: "patch",
 										NodeArgs: libparser.NodeArgs{
 											libparser.NewSimpleNodeString("-s"),
+											&libparser.NodeWhitespace{IsLineBreak: true},
 											libparser.NewSimpleNodeString("-o"),
 											libparser.NewSimpleNodeString("/tmp/patched-file.json"),
+											&libparser.NodeWhitespace{IsLineBreak: true},
 											&libparser.NodeExec{
 												Name: "realpath",
 												NodeArgs: libparser.NodeArgs{
@@ -118,6 +122,7 @@ var ExpectedData = []DataTestCase{
 													},
 												},
 											},
+											&libparser.NodeWhitespace{IsLineBreak: true},
 											&libparser.NodeString{
 												Segments: libparser.SegmentedString{
 													&libparser.VariableStringSegment{
@@ -374,6 +379,7 @@ var ExpectedData = []DataTestCase{
 						Name: "echo",
 						NodeArgs: libparser.NodeArgs{
 							libparser.NewSimpleNodeString("123"),
+							&libparser.NodeWhitespace{IsLineBreak: true},
 						},
 					},
 					Dest: &libparser.NodePipe{
@@ -381,6 +387,7 @@ var ExpectedData = []DataTestCase{
 							Name: "program2",
 							NodeArgs: libparser.NodeArgs{
 								libparser.NewSimpleNodeString("input"),
+								&libparser.NodeWhitespace{IsLineBreak: true},
 							},
 						},
 						Dest: &libparser.NodePipe{
@@ -388,6 +395,7 @@ var ExpectedData = []DataTestCase{
 								Name: "program3",
 								NodeArgs: libparser.NodeArgs{
 									libparser.NewSimpleNodeString("input"),
+									&libparser.NodeWhitespace{IsLineBreak: true},
 								},
 							},
 							Dest: &libparser.NodeExec{
