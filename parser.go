@@ -352,7 +352,8 @@ func (parser *Parser) readArg() (Node, *liberrors.DetailedError) {
 				}
 				return literal.ToStringNode(), nil
 			}
-			if parser.escaped(char, char) {
+			// was the previous character '\\'
+			if parser.escaped(0, 0) {
 				current_segment.WriteRune('\\')
 			}
 			if char != '\\' {
