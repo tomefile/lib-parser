@@ -22,7 +22,7 @@ type Parser struct {
 
 func New(file File) *Parser {
 	root := &NodeRoot{
-		Tomes: map[string]Node{},
+		Tomes: map[string]*NodeDirective{},
 		NodeContext: NodeContext{
 			OffsetStart: 0,
 			OffsetEnd:   0,

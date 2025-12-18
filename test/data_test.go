@@ -11,7 +11,7 @@ var ExpectedData = []DataTestCase{
 	{
 		Filename: "01_syntax.tome",
 		Expect: &libparser.NodeRoot{
-			Tomes: map[string]libparser.Node{
+			Tomes: map[string]*libparser.NodeDirective{
 				"empty": nil,
 			},
 			NodeChildren: libparser.NodeChildren{
@@ -156,7 +156,7 @@ var ExpectedData = []DataTestCase{
 	{
 		Filename: "02_directive_body.tome",
 		Expect: &libparser.NodeRoot{
-			Tomes: map[string]libparser.Node{},
+			Tomes: map[string]*libparser.NodeDirective{},
 			NodeChildren: libparser.NodeChildren{
 				&libparser.NodeExec{
 					Name: "echo",
@@ -191,7 +191,7 @@ var ExpectedData = []DataTestCase{
 	{
 		Filename: "03_directive_nested.tome",
 		Expect: &libparser.NodeRoot{
-			Tomes: map[string]libparser.Node{},
+			Tomes: map[string]*libparser.NodeDirective{},
 			NodeChildren: libparser.NodeChildren{
 				&libparser.NodeExec{
 					Name: "echo",
@@ -255,7 +255,7 @@ var ExpectedData = []DataTestCase{
 	{
 		Filename: "04_subcommand.tome",
 		Expect: &libparser.NodeRoot{
-			Tomes: map[string]libparser.Node{},
+			Tomes: map[string]*libparser.NodeDirective{},
 			NodeChildren: libparser.NodeChildren{
 				&libparser.NodeCall{
 					Macro: "my_macro",
@@ -285,7 +285,7 @@ var ExpectedData = []DataTestCase{
 	{
 		Filename: "05_tomes.tome",
 		Expect: &libparser.NodeRoot{
-			Tomes: map[string]libparser.Node{
+			Tomes: map[string]*libparser.NodeDirective{
 				"first":  nil,
 				"second": nil,
 			},
@@ -333,7 +333,7 @@ var ExpectedData = []DataTestCase{
 	{
 		Filename: "06_semicolon.tome",
 		Expect: &libparser.NodeRoot{
-			Tomes: map[string]libparser.Node{},
+			Tomes: map[string]*libparser.NodeDirective{},
 			NodeChildren: libparser.NodeChildren{
 				&libparser.NodeExec{
 					Name: "echo",
@@ -365,7 +365,7 @@ var ExpectedData = []DataTestCase{
 	{
 		Filename: "07_pipes.tome",
 		Expect: &libparser.NodeRoot{
-			Tomes: map[string]libparser.Node{},
+			Tomes: map[string]*libparser.NodeDirective{},
 			NodeChildren: libparser.NodeChildren{
 				&libparser.NodePipe{
 					Source: &libparser.NodeExec{
@@ -421,7 +421,7 @@ var ExpectedData = []DataTestCase{
 	{
 		Filename: "08_redirects.tome",
 		Expect: &libparser.NodeRoot{
-			Tomes: map[string]libparser.Node{},
+			Tomes: map[string]*libparser.NodeDirective{},
 			NodeChildren: libparser.NodeChildren{
 				&libparser.NodeRedirect{
 					Source: &libparser.NodePipe{

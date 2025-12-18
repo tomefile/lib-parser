@@ -13,7 +13,7 @@ type Node interface {
 // ————————————————————————————————
 
 type NodeRoot struct {
-	Tomes map[string]Node
+	Tomes map[string]*NodeDirective
 	NodeContext
 	NodeChildren
 }

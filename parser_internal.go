@@ -48,7 +48,7 @@ func (parser *Parser) process(node Node) (Node, *liberrors.DetailedError) {
 	}
 
 	if tome_name != "" {
-		parser.Result.Tomes[tome_name] = node
+		parser.Result.Tomes[tome_name] = node.(*NodeDirective)
 	}
 
 	return node, nil
